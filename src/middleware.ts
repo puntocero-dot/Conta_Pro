@@ -11,7 +11,7 @@ export async function middleware(_req: NextRequest) {
     res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.headers.set(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' https://urazjmzrokchduuioeku.supabase.co https://api.pwnedpasswords.com;"
+        "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' https://*.supabase.co https://api.pwnedpasswords.com;"
     );
 
     // TODO: Add Auth verification (Supabase)
