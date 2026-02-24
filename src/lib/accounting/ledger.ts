@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { AMLService } from '../fintech/aml';
+import { AMLService } from '@/lib/fintech/aml';
 
 export interface AccountingTransactionInput {
     companyId: string;
@@ -33,7 +33,7 @@ export class LedgerService {
         }
 
         // 2. Buscar Regla en el Motor de Reglas
-        const rule = await prisma.countryRule.findFirst({
+        const rule = await (prisma as any).countryRule.findFirst({
             where: {
                 country,
                 triggerText: {
@@ -53,7 +53,7 @@ export class LedgerService {
         const subtotal = amount - iva;
 
         // 3. Generar el Asiento Contable (Journal Entry)
-        const entry = await prisma.journalEntry.create({
+        const entry = await (prisma as any).journalEntry.create({
             data: {
                 companyId,
                 description,
@@ -96,7 +96,7 @@ export class LedgerService {
      * Obtiene o crea una cuenta contable por código para una empresa.
      */
     private static async getAccountIdByCode(companyId: string, code: string) {
-        let account = await prisma.account.findUnique({
+        let account = await (prisma as any).account.findUnique({
             where: {
                 companyId_code: { companyId, code },
             },
@@ -104,7 +104,7 @@ export class LedgerService {
 
         if (!account) {
             // Si la cuenta no existe, la creamos (Modo "Auto-setup" para este MVP)
-            account = await prisma.account.create({
+            account = await (prisma as any).account.create({
                 data: {
                     companyId,
                     code,
