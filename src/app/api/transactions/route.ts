@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase/client';
+import { LedgerService } from '@/lib/accounting/ledger';
 
 export async function GET(request: NextRequest) {
     try {
@@ -111,6 +112,20 @@ export async function POST(request: NextRequest) {
                 category: true,
             },
         });
+
+        // Create Ledger Entry (Invisible Accounting)
+        try {
+            await LedgerService.processTransaction({
+                companyId,
+                amount,
+                category: transaction.category.name,
+                description,
+                reference: transaction.id,
+                date: transaction.date,
+            });
+        } catch (ledgerError) {
+            console.warn('⚠️ No se pudo generar el asiento contable:', ledgerError);
+        }
 
         return NextResponse.json({ transaction }, { status: 201 });
     } catch (error) {

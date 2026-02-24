@@ -20,14 +20,14 @@ model User {
   role      Role     @default(CLIENTE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Password management
-  passwordChangedAt  DateTime? // Última vez que cambió la contraseña
-  passwordHistory    Json?     // Historial de últimas 5 contraseñas (encriptado)
-  backupCodes        String?   // Backup codes para MFA (encriptado)
-  mfaEnabled         Boolean   @default(false)
-  mfaSecret          String?   // TOTP secret (encriptado)
-  
+  passwordChangedAt DateTime? // Última vez que cambió la contraseña
+  passwordHistory   Json? // Historial de últimas 5 contraseñas (encriptado)
+  backupCodes       String? // Backup codes para MFA (encriptado)
+  mfaEnabled        Boolean   @default(false)
+  mfaSecret         String? // TOTP secret (encriptado)
+
   // Relations
   companies Company[]
   auditLogs AuditLog[]
@@ -38,14 +38,16 @@ model Company {
   name      String
   taxId     String   @unique // Encrypted
   country   String
-  metadata  Json?    // Legal form, NRC, address, etc.
+  metadata  Json? // Legal form, NRC, address, etc.
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  users        User[]
-  transactions Transaction[]
-  categories   Category[]
+  users          User[]
+  transactions   Transaction[]
+  categories     Category[]
+  accounts       Account[]
+  journalEntries JournalEntry[]
 }
 
 enum TransactionType {
@@ -54,14 +56,14 @@ enum TransactionType {
 }
 
 model Category {
-  id        String   @id @default(uuid())
+  id        String          @id @default(uuid())
   name      String
   type      TransactionType
-  color     String   @default("#3b82f6")
-  icon      String   @default("📁")
+  color     String          @default("#3b82f6")
+  icon      String          @default("📁")
   companyId String
-  createdAt DateTime @default(now())
-  
+  createdAt DateTime        @default(now())
+
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 }
@@ -75,14 +77,14 @@ model Transaction {
   categoryId  String
   companyId   String
   userId      String
-  attachments Json?           // URLs de archivos adjuntos
-  metadata    Json?           // Tax info, etc
+  attachments Json? // URLs de archivos adjuntos
+  metadata    Json? // Tax info, etc
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  
+
   category Category @relation(fields: [categoryId], references: [id])
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+
   @@index([companyId])
   @@index([userId])
   @@index([date])
@@ -102,6 +104,63 @@ model AuditLog {
   newData     Json?
   result      String
   metadata    Json?
-  
-  user        User?    @relation(fields: [userId], references: [id])
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  code      String // Código catálogo (ej: 1101)
+  name      String // Nombre (ej: Efectivo)
+  type      String // Activo, Pasivo, Patrimonio, Ingreso, Gasto
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines   JournalEntryLine[]
+
+  @@unique([companyId, code])
+}
+
+model JournalEntry {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  description String
+  reference   String? // Relación con transacción original o factura
+  companyId   String
+  metadata    Json? // Datos del Motor de Reglas
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines   JournalEntryLine[]
+
+  @@index([companyId])
+  @@index([date])
+}
+
+model JournalEntryLine {
+  id             String @id @default(uuid())
+  journalEntryId String
+  accountId      String
+  debit          Float  @default(0)
+  credit         Float  @default(0)
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      Account      @relation(fields: [accountId], references: [id])
+
+  @@index([journalEntryId])
+  @@index([accountId])
+}
+
+model CountryRule {
+  id          String   @id @default(uuid())
+  country     String // ISO (SV, GT...)
+  triggerText String // Texto que activa la regla (ej: "Gasolina")
+  rules       Json // { debit: "5102", credit: "1101", tax: 0.13, aml_limit: 10000 }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([country, triggerText])
 }
