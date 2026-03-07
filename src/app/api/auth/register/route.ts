@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 import { validatePassword } from '@/lib/auth/password-policy';
+import { generateToken, AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth/jwt';
 
 export async function POST(request: Request) {
     try {
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
         // 1. Validate Input
         if (!email || !password) {
             return NextResponse.json(
-                { error: 'Email and password are required' },
+                { error: 'Email y contraseña son requeridos' },
                 { status: 400 }
             );
         }
@@ -24,76 +25,53 @@ export async function POST(request: Request) {
             );
         }
 
-        // 2. Create user in Supabase Auth
-        // Note: This runs on the server, but uses the anon key (client). 
-        // This is fine for signup as it's a public endpoint.
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
+        // 2. Verificar que no exista ya
+        const existingUser = await prisma.user.findUnique({
+            where: { email: email.trim().toLowerCase() },
         });
 
-        if (authError) {
+        if (existingUser) {
             return NextResponse.json(
-                { error: authError.message },
-                { status: 400 }
+                { error: 'El email ya está registrado' },
+                { status: 409 }
             );
         }
 
-        if (!authData.user) {
-            return NextResponse.json(
-                { error: 'Failed to create user in authentication provider' },
-                { status: 500 }
-            );
-        }
+        // 3. Hash password con bcrypt
+        const passwordHash = await bcrypt.hash(password, 12);
 
-        // 3. Create user in Prisma Database
-        try {
-            // Check if user already exists to avoid unique constraint error if retrying
-            const existingUser = await prisma.user.findUnique({
-                where: { id: authData.user.id }
-            });
+        // 4. Crear usuario en DB
+        const newUser = await prisma.user.create({
+            data: {
+                email: email.trim().toLowerCase(),
+                passwordHash,
+                role: 'CLIENTE', // Default role
+            },
+        });
 
-            if (existingUser) {
-                return NextResponse.json({
-                    message: 'User already registered',
-                    user: existingUser
-                });
-            }
+        // 5. Generar JWT y cookie
+        const token = generateToken({
+            userId: newUser.id,
+            email: newUser.email,
+            role: newUser.role,
+        });
 
-            const newUser = await prisma.user.create({
-                data: {
-                    id: authData.user.id,
-                    email: authData.user.email!,
-                    role: 'CLIENTE', // Default role
-                },
-            });
+        const response = NextResponse.json({
+            message: 'Usuario registrado exitosamente',
+            user: {
+                id: newUser.id,
+                email: newUser.email,
+                role: newUser.role,
+            },
+        });
 
-            return NextResponse.json({
-                message: 'User registered successfully',
-                user: newUser
-            });
+        response.cookies.set(AUTH_COOKIE_NAME, token, AUTH_COOKIE_OPTIONS);
 
-        } catch (dbError: unknown) {
-            console.error('Database creation error:', dbError);
-            const error = dbError as { code?: string };
-
-            if (error.code === 'P2002') {
-                return NextResponse.json(
-                    { error: 'User already exists in database' },
-                    { status: 409 }
-                );
-            }
-
-            return NextResponse.json(
-                { error: 'Failed to create user profile. Please contact support.' },
-                { status: 500 }
-            );
-        }
-
+        return response;
     } catch (error) {
         console.error('Registration error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Error interno del servidor' },
             { status: 500 }
         );
     }

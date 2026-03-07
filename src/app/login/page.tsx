@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import styles from './login.module.css';
 
@@ -11,7 +10,6 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const router = useRouter();
-
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,29 +34,34 @@ export default function LoginPage() {
             }
         } catch (err) {
             console.error('Error checking rate limit:', err);
-            // Continuar si falla (fail-safe)
         }
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-        });
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.trim(), password }),
+            });
 
-        if (error) {
-            setError(error.message);
-            setLoading(false);
+            const data = await res.json();
 
-            // Registrar intento fallido para rate limiting
-            try {
-                await fetch('/api/auth/record-failed-attempt', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier: email.trim() }),
-                });
-            } catch (err) {
-                console.error('Error recording failed attempt:', err);
+            if (!res.ok) {
+                setError(data.error || 'Error al iniciar sesión');
+                setLoading(false);
+
+                // Registrar intento fallido
+                try {
+                    await fetch('/api/auth/record-failed-attempt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifier: email.trim() }),
+                    });
+                } catch (err) {
+                    console.error('Error recording failed attempt:', err);
+                }
+                return;
             }
-        } else {
+
             // Login exitoso, limpiar rate limit
             try {
                 await fetch('/api/auth/clear-rate-limit', {
@@ -71,6 +74,9 @@ export default function LoginPage() {
             }
 
             router.push('/dashboard');
+        } catch {
+            setError('Error de conexión');
+            setLoading(false);
         }
     };
 

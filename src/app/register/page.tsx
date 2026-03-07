@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { validatePassword } from '@/lib/auth/password-policy';
 import styles from './register.module.css';
@@ -61,26 +60,28 @@ export default function RegisterPage() {
             }
         } catch (err) {
             console.error('Error validating password with HIBP:', err);
-            // Continuar si la validación falla (fail-safe)
         }
 
-        // Registrar con Supabase
-        const { data, error: signUpError } = await supabase.auth.signUp({
-            email: email.trim(),
-            password,
-            options: {
-                data: {
-                    role: 'CLIENTE', // Asignar rol por defecto
-                },
-            },
-        });
+        // Registrar con API propia
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email.trim(), password }),
+            });
 
-        if (signUpError) {
-            setError(signUpError.message);
-            setLoading(false);
-        } else if (data.user) {
-            // Redirigir al dashboard
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || 'Error al crear cuenta');
+                setLoading(false);
+                return;
+            }
+
             router.push('/dashboard');
+        } catch {
+            setError('Error de conexión');
+            setLoading(false);
         }
     };
 

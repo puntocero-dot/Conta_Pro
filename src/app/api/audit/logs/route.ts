@@ -1,25 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuditLogs, AuditAction, AuditResult } from '@/lib/audit/audit-service';
-import { supabase } from '@/lib/supabase/client';
+import { getAuthFromRequest } from '@/lib/auth/jwt';
 
 export async function GET(request: NextRequest) {
     try {
-        // Verificar autenticación
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
-        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-
-        if (authError || !user) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
+        const auth = await getAuthFromRequest(request);
+        if (!auth) {
+            return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
         // Obtener parámetros de query
@@ -38,10 +25,9 @@ export async function GET(request: NextRequest) {
             ? new Date(searchParams.get('endDate')!)
             : undefined;
 
-        // Verificar permisos (solo SUPER_ADMIN puede ver todos los logs)
-        const userRole = user.user_metadata?.role;
+        // Solo SUPER_ADMIN puede ver todos los logs, otros solo los suyos
         const logFilters = {
-            userId: userRole !== 'SUPER_ADMIN' ? user.id : queryUserId,
+            userId: auth.role !== 'SUPER_ADMIN' ? auth.userId : queryUserId,
             action: queryAction,
             resource: queryResource,
             result: queryResult,

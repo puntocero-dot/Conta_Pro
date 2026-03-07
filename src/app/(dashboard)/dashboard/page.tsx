@@ -1,31 +1,19 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useSessionManagement } from '@/hooks/useSessionManagement';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { supabase } from '@/lib/supabase/client';
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
-    const { user, role, loading } = useAuth();
+    const { user, role, loading, logout } = useAuth();
     const router = useRouter();
-
-    useSessionManagement({
-        inactivityTimeoutMs: 15 * 60 * 1000,
-        enableConcurrentDetection: true,
-    });
 
     useEffect(() => {
         if (!loading && !user) {
             router.push('/login');
         }
     }, [user, loading, router]);
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
-    };
 
     if (loading) {
         return (
@@ -65,7 +53,7 @@ export default function DashboardPage() {
                         <p className={styles.email}>{user.email}</p>
                         <span className={styles.badge}>{role || 'CLIENTE'}</span>
                     </div>
-                    <button onClick={handleLogout} className={styles.logoutBtn}>Cerrar Sesión</button>
+                    <button onClick={logout} className={styles.logoutBtn}>Cerrar Sesión</button>
                 </div>
             </header>
 
@@ -95,12 +83,12 @@ export default function DashboardPage() {
                     </button>
 
                     <button
-                        onClick={() => router.push('/mfa-setup')}
+                        onClick={() => router.push('/companies')}
                         className={`${styles.actionCard} ${styles.accent}`}
                     >
-                        <div className={styles.actionIcon}>🔐</div>
-                        <h3>Configurar MFA</h3>
-                        <p>Protege tu cuenta</p>
+                        <div className={styles.actionIcon}>🏢</div>
+                        <h3>Empresas</h3>
+                        <p>Gestiona tus empresas</p>
                     </button>
                 </div>
 
@@ -137,7 +125,7 @@ export default function DashboardPage() {
                     <div className={styles.securityIcon}>🛡️</div>
                     <div className={styles.securityContent}>
                         <h4>Protección Activa</h4>
-                        <p>Tus datos están encriptados con AES-256. Auto-logout: 15 min</p>
+                        <p>Tus datos están encriptados con AES-256</p>
                     </div>
                 </div>
             </main>

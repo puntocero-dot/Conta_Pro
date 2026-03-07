@@ -3,18 +3,16 @@
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase/client';
 import styles from './layout.module.css';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const { user, role } = useAuth();
+    const { user, role, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
+        await logout();
     };
 
     const menuItems = [

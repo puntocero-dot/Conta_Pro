@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { supabase } from '@/lib/supabase/client';
+import { getAuthFromRequest } from '@/lib/auth/jwt';
 
-// Add Client model to Prisma schema first
 export async function GET(request: NextRequest) {
     try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (authError || !user) {
+        const auth = await getAuthFromRequest(request);
+        if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
-        // Get user's company (simplified - in production use current company)
+        // Get user's company
         const userRecord = await prisma.user.findUnique({
-            where: { id: user.id },
+            where: { id: auth.userId },
             include: { companies: true },
         });
 
@@ -51,9 +49,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (authError || !user) {
+        const auth = await getAuthFromRequest(request);
+        if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
@@ -70,7 +67,7 @@ export async function POST(request: NextRequest) {
 
         // Get user's company
         const userRecord = await prisma.user.findUnique({
-            where: { id: user.id },
+            where: { id: auth.userId },
             include: { companies: true },
         });
 
@@ -84,7 +81,6 @@ export async function POST(request: NextRequest) {
         const companyId = userRecord.companies[0].id;
 
         // TODO: Create client when model is added
-        // For now, return success
         const client = {
             id: Date.now().toString(),
             name,

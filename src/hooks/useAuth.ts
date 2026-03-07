@@ -1,59 +1,57 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { useEffect, useState, useCallback } from 'react';
 import { Role } from '@/lib/auth/rbac';
 
+interface AuthUser {
+    id: string;
+    email: string;
+    role: Role;
+}
+
 export function useAuth() {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<AuthUser | null>(null);
     const [role, setRole] = useState<Role | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchRole = async (token: string) => {
-            try {
-                const res = await fetch('/api/users/me', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+    const fetchUser = useCallback(async () => {
+        try {
+            const res = await fetch('/api/users/me');
+            if (res.ok) {
+                const data = await res.json();
+                setUser({
+                    id: data.id,
+                    email: data.email,
+                    role: data.role,
                 });
-                if (res.ok) {
-                    const data = await res.json();
-                    setRole(data.role);
-                }
-            } catch (error) {
-                console.error('Error fetching role:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchRole(session.access_token);
+                setRole(data.role);
             } else {
-                setLoading(false);
-            }
-        });
-
-        // Listen for auth changes
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchRole(session.access_token);
-            } else {
+                setUser(null);
                 setRole(null);
-                setLoading(false);
             }
-        });
-
-        return () => subscription.unsubscribe();
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            setUser(null);
+            setRole(null);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    return { user, role, loading };
+    useEffect(() => {
+        fetchUser();
+    }, [fetchUser]);
+
+    const logout = useCallback(async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            setUser(null);
+            setRole(null);
+            window.location.href = '/login';
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    }, []);
+
+    return { user, role, loading, logout, refetch: fetchUser };
 }

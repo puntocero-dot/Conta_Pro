@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { supabase } from '@/lib/supabase/client';
+import { getAuthFromRequest } from '@/lib/auth/jwt';
 import { LedgerService } from '@/lib/accounting/ledger';
 
 export async function GET(request: NextRequest) {
     try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (authError || !user) {
+        const auth = await getAuthFromRequest(request);
+        if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
-        // Get user's company (simplificado - en producción usar la empresa actual del usuario)
+        // Get user's company
         const userRecord = await prisma.user.findUnique({
-            where: { id: user.id },
+            where: { id: auth.userId },
             include: { companies: true },
         });
 
@@ -44,9 +43,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-        if (authError || !user) {
+        const auth = await getAuthFromRequest(request);
+        if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
@@ -63,7 +61,7 @@ export async function POST(request: NextRequest) {
 
         // Get user's company
         const userRecord = await prisma.user.findUnique({
-            where: { id: user.id },
+            where: { id: auth.userId },
             include: { companies: true },
         });
 
@@ -79,7 +77,6 @@ export async function POST(request: NextRequest) {
         // Get or create default category
         let finalCategoryId = categoryId;
         if (!categoryId) {
-            // Create default category if doesn't exist
             const defaultCategory = await prisma.category.upsert({
                 where: {
                     id: `default-${type.toLowerCase()}-${companyId}`.substring(0, 36)
@@ -106,7 +103,7 @@ export async function POST(request: NextRequest) {
                 date: new Date(date),
                 categoryId: finalCategoryId,
                 companyId,
-                userId: user.id,
+                userId: auth.userId,
             },
             include: {
                 category: true,
