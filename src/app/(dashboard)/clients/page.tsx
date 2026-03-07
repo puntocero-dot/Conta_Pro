@@ -63,14 +63,14 @@ export default function ClientsPage() {
     }
 
     return (
-        <div className={styles.container}>
-            <div className={styles.header}>
+        <div className="animate-fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
                 <div>
-                    <h1>👥 Clientes</h1>
-                    <p>Gestión de clientes y proveedores</p>
+                    <h1 style={{ marginBottom: '0.25rem' }}>Clientes</h1>
+                    <p>Gestión de cartera y contactos</p>
                 </div>
-                <button onClick={() => setShowNewModal(true)} className={styles.newButton}>
-                    + Nuevo Cliente
+                <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+                    <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
                 </button>
             </div>
 
@@ -78,86 +78,93 @@ export default function ClientsPage() {
             <div className={styles.statsGrid}>
                 <div className={styles.statCard}>
                     <div className={styles.statIcon}>👥</div>
-                    <div>
+                    <div className={styles.statInfo}>
                         <p>Total Clientes</p>
                         <h3>{clients.length}</h3>
                     </div>
                 </div>
                 <div className={styles.statCard}>
                     <div className={styles.statIcon}>🏢</div>
-                    <div>
+                    <div className={styles.statInfo}>
                         <p>Empresas</p>
                         <h3>{clients.filter(c => c.type === 'COMPANY').length}</h3>
                     </div>
                 </div>
                 <div className={styles.statCard}>
                     <div className={styles.statIcon}>💰</div>
-                    <div>
+                    <div className={styles.statInfo}>
                         <p>Saldo Pendiente</p>
                         <h3>${totalBalance.toLocaleString('es-MX')}</h3>
                     </div>
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className={styles.filters}>
-                <button
-                    className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
-                    onClick={() => setFilter('ALL')}
-                >
-                    Todos
-                </button>
-                <button
-                    className={filter === 'INDIVIDUAL' ? styles.filterActive : styles.filterBtn}
-                    onClick={() => setFilter('INDIVIDUAL')}
-                >
-                    Personas
-                </button>
-                <button
-                    className={filter === 'COMPANY' ? styles.filterActive : styles.filterBtn}
-                    onClick={() => setFilter('COMPANY')}
-                >
-                    Empresas
-                </button>
-            </div>
-
-            {/* Clients List */}
-            <div className={styles.clientsList}>
-                {filteredClients.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>👥</div>
-                        <h3>No hay clientes registrados</h3>
-                        <p>Crea tu primer cliente para comenzar</p>
-                        <button onClick={() => setShowNewModal(true)}>
-                            Crear Primer Cliente
+            {/* Content Section */}
+            <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div className={styles.filters}>
+                        <button
+                            className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
+                            onClick={() => setFilter('ALL')}
+                        >
+                            Todos
+                        </button>
+                        <button
+                            className={filter === 'INDIVIDUAL' ? styles.filterActive : styles.filterBtn}
+                            onClick={() => setFilter('INDIVIDUAL')}
+                        >
+                            Personas
+                        </button>
+                        <button
+                            className={filter === 'COMPANY' ? styles.filterActive : styles.filterBtn}
+                            onClick={() => setFilter('COMPANY')}
+                        >
+                            Empresas
                         </button>
                     </div>
-                ) : (
-                    filteredClients.map(client => (
-                        <div key={client.id} className={styles.clientCard}>
-                            <div className={styles.clientAvatar}>
-                                {client.type === 'COMPANY' ? '🏢' : '👤'}
-                            </div>
-                            <div className={styles.clientInfo}>
-                                <h4>{client.name}</h4>
-                                <div className={styles.clientDetails}>
-                                    {client.email && <span>✉️ {client.email}</span>}
-                                    {client.phone && <span>📞 {client.phone}</span>}
-                                    {client.nit && <span>🏛️ NIT: {client.nit}</span>}
-                                </div>
-                            </div>
-                            <div className={styles.clientBalance}>
-                                <p>Saldo</p>
-                                <h4 className={client.balance > 0 ? styles.positive : ''}>
-                                    ${client.balance.toLocaleString('es-MX')}
-                                </h4>
-                            </div>
-                            <button className={styles.viewBtn}>
-                                Ver Detalles
+                    <div style={{ position: 'relative' }}>
+                        <input type="text" placeholder="Buscar cliente..." className="input" style={{ width: '240px', paddingLeft: '2.5rem' }} />
+                        <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                    </div>
+                </div>
+
+                <div className={styles.clientsList}>
+                    {filteredClients.length === 0 ? (
+                        <div className={styles.emptyState}>
+                            <div className={styles.emptyIcon}>👤</div>
+                            <h3>Sin resultados</h3>
+                            <p style={{ marginBottom: '1.5rem' }}>No se encontraron clientes para este filtro.</p>
+                            <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+                                Crear Primer Cliente
                             </button>
                         </div>
-                    ))
-                )}
+                    ) : (
+                        filteredClients.map(client => (
+                            <div key={client.id} className={styles.clientCard}>
+                                <div className={styles.clientAvatar}>
+                                    {client.type === 'COMPANY' ? '🏢' : '👤'}
+                                </div>
+                                <div className={styles.clientInfo}>
+                                    <h4>{client.name}</h4>
+                                    <div className={styles.clientDetails}>
+                                        {client.email && <span>✉️ {client.email}</span>}
+                                        {client.phone && <span>📞 {client.phone}</span>}
+                                        {client.nit && <span>🏛️ {client.nit}</span>}
+                                    </div>
+                                </div>
+                                <div className={styles.clientBalance}>
+                                    <p>Saldo</p>
+                                    <h4 className={client.balance > 0 ? styles.positive : ''}>
+                                        ${client.balance.toLocaleString('es-MX')}
+                                    </h4>
+                                </div>
+                                <button className="btn btn-ghost" style={{ fontSize: '1.25rem' }}>
+                                    ⋮
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
 
             {showNewModal && (
@@ -212,7 +219,7 @@ function NewClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <div className={styles.modalHeader}>
-                    <h2>Nuevo Cliente</h2>
+                    <h3 style={{ margin: 0 }}>Registrar Nuevo Cliente</h3>
                     <button onClick={onClose} className={styles.closeBtn}>✕</button>
                 </div>
 
@@ -223,55 +230,59 @@ function NewClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                             className={formData.type === 'INDIVIDUAL' ? styles.typeActive : ''}
                             onClick={() => setFormData({ ...formData, type: 'INDIVIDUAL' })}
                         >
-                            👤 Persona
+                            👤 Persona Natural
                         </button>
                         <button
                             type="button"
                             className={formData.type === 'COMPANY' ? styles.typeActive : ''}
                             onClick={() => setFormData({ ...formData, type: 'COMPANY' })}
                         >
-                            🏢 Empresa
+                            🏢 Empresa / Entidad
                         </button>
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Nombre Completo / Razón Social *</label>
+                    <div className="form-group">
+                        <label className="label">Nombre o Razón Social</label>
                         <input
                             type="text"
                             required
+                            className="input"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Juan Pérez / Empresa S.A."
+                            placeholder="Ej: Santiago Andre Ruballo"
                         />
                     </div>
 
                     <div className={styles.formRow}>
-                        <div className={styles.formGroup}>
-                            <label>Email</label>
+                        <div className="form-group">
+                            <label className="label">Correo Electrónico</label>
                             <input
                                 type="email"
+                                className="input"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="cliente@example.com"
+                                placeholder="usuario@gmail.com"
                             />
                         </div>
-                        <div className={styles.formGroup}>
-                            <label>Teléfono</label>
+                        <div className="form-group">
+                            <label className="label">Número de Teléfono</label>
                             <input
                                 type="tel"
+                                className="input"
                                 value={formData.phone}
                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+503 7123-4567"
+                                placeholder="7222-6244"
                             />
                         </div>
                     </div>
 
                     <div className={styles.formRow}>
                         {formData.type === 'INDIVIDUAL' ? (
-                            <div className={styles.formGroup}>
-                                <label>DUI</label>
+                            <div className="form-group">
+                                <label className="label">DUI (con guiones)</label>
                                 <input
                                     type="text"
+                                    className="input"
                                     value={formData.dui}
                                     onChange={(e) => setFormData({ ...formData, dui: e.target.value })}
                                     placeholder="01234567-8"
@@ -279,10 +290,11 @@ function NewClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                                 />
                             </div>
                         ) : (
-                            <div className={styles.formGroup}>
-                                <label>NIT</label>
+                            <div className="form-group">
+                                <label className="label">NIT (con guiones)</label>
                                 <input
                                     type="text"
+                                    className="input"
                                     value={formData.nit}
                                     onChange={(e) => setFormData({ ...formData, nit: e.target.value })}
                                     placeholder="0614-210188-101-2"
@@ -291,19 +303,25 @@ function NewClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                         )}
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Dirección</label>
+                    <div className="form-group">
+                        <label className="label">Dirección Residencial / Comercial</label>
                         <textarea
+                            className="input"
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            placeholder="Dirección completa"
-                            rows={3}
+                            placeholder="Calle Principal #123, San Salvador"
+                            rows={2}
                         />
                     </div>
 
-                    <button type="submit" disabled={loading} className={styles.submitBtn}>
-                        {loading ? 'Guardando...' : 'Guardar Cliente'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
+                            Cancelar
+                        </button>
+                        <button type="submit" disabled={loading} className="btn btn-primary" style={{ flex: 2 }}>
+                            {loading ? 'Procesando...' : 'Finalizar Registro'}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

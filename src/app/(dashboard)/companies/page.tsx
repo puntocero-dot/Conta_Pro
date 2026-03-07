@@ -56,47 +56,59 @@ export default function CompaniesPage() {
     }
 
     return (
-        <div className={styles.container}>
-            <div className={styles.header}>
-                <button onClick={() => router.push('/dashboard')} className={styles.backBtn}>
-                    ← Volver
-                </button>
+        <div className="animate-fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
                 <div>
-                    <h1>🏢 Mis Empresas</h1>
-                    <p>Gestión de personas jurídicas - El Salvador</p>
+                    <h1 style={{ marginBottom: '0.25rem' }}>Empresas</h1>
+                    <p>Entidades legales y configuraciones fiscales</p>
                 </div>
-                <button onClick={() => setShowNewModal(true)} className={styles.newButton}>
-                    + Nueva Empresa
+                <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+                    <span style={{ fontSize: '1.2rem' }}>+</span> Nueva Empresa
                 </button>
             </div>
 
             <div className={styles.companiesList}>
                 {companies.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>🏢</div>
-                        <h3>No tienes empresas registradas</h3>
-                        <p>Crea tu primera empresa para comenzar a usar el sistema</p>
-                        <button onClick={() => setShowNewModal(true)} className={styles.createFirstBtn}>
-                            Crear Primera Empresa
+                    <div className="card shadow-sm" style={{ textAlign: 'center', padding: '5rem 2rem' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1.5rem', opacity: 0.5 }}>🏢</div>
+                        <h3>Sin empresas</h3>
+                        <p style={{ color: '#64748b', marginBottom: '2rem' }}>Comienza registrando tu primera entidad legal.</p>
+                        <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+                            Registrar Mi Empresa
                         </button>
                     </div>
                 ) : (
                     companies.map(company => (
                         <div key={company.id} className={styles.companyCard}>
-                            <div className={styles.companyIcon}>🏢</div>
-                            <div className={styles.companyInfo}>
-                                <h3>{company.name}</h3>
-                                <p className={styles.legalForm}>{company.legalForm || 'S.A.'}</p>
-                                <div className={styles.companyDetails}>
-                                    <span><strong>NIT:</strong> {company.taxId}</span>
-                                    {company.nrc && <span><strong>NRC:</strong> {company.nrc}</span>}
-                                    {company.economicActivity && (
-                                        <span><strong>Actividad:</strong> {company.economicActivity}</span>
-                                    )}
+                            <div className={styles.cardHeader}>
+                                <div className={styles.icon}>🏢</div>
+                                <div>
+                                    <h3>{company.name}</h3>
+                                    <p className={styles.legalForm}>{company.legalForm || 'Persona Jurídica'}</p>
                                 </div>
                             </div>
+
+                            <div className={styles.details}>
+                                <div className={styles.detailRow}>
+                                    <span style={{ fontWeight: 600, color: '#1e293b', minWidth: '40px' }}>NIT:</span>
+                                    <span>{company.taxId}</span>
+                                </div>
+                                {company.nrc && (
+                                    <div className={styles.detailRow}>
+                                        <span style={{ fontWeight: 600, color: '#1e293b', minWidth: '40px' }}>NRC:</span>
+                                        <span>{company.nrc}</span>
+                                    </div>
+                                )}
+                                {company.economicActivity && (
+                                    <div className={styles.detailRow}>
+                                        <span style={{ fontWeight: 600, color: '#1e293b', minWidth: '40px' }}>Giro:</span>
+                                        <span>{company.economicActivity}</span>
+                                    </div>
+                                )}
+                            </div>
+
                             <button className={styles.selectBtn}>
-                                Usar Empresa
+                                Gestionar Entidad
                             </button>
                         </div>
                     ))
@@ -171,19 +183,13 @@ function NewCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         e.preventDefault();
         setError('');
 
-        // Validaciones
         if (!validateNIT(formData.nit)) {
-            setError('NIT inválido. Formato: XXXX-XXXXXX-XXX-X');
+            setError('NIT inválido. Formato sugerido: XXXX-XXXXXX-XXX-X');
             return;
         }
 
         if (!validateNRC(formData.nrc)) {
-            setError('NRC inválido. Debe contener 6-7 dígitos');
-            return;
-        }
-
-        if (['SA', 'SRL'].includes(formData.legalForm) && !formData.shareCapital) {
-            setError('El capital social es obligatorio para S.A. y S. de R.L.');
+            setError('NRC inválido. Debe contener entre 6 y 8 dígitos');
             return;
         }
 
@@ -208,7 +214,7 @@ function NewCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 setError(data.error || 'Error al crear empresa');
             }
         } catch (err) {
-            setError('Error al crear empresa');
+            setError('Error de conexión al servidor');
         } finally {
             setLoading(false);
         }
@@ -218,14 +224,15 @@ function NewCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <div className={styles.modalHeader}>
-                    <h2>🏢 Nueva Empresa</h2>
+                    <h3 style={{ margin: 0 }}>🏢 Registrar Entidad Legal</h3>
                     <button onClick={onClose} className={styles.closeBtn}>✕</button>
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.modalForm}>
-                    <div className={styles.formGroup}>
-                        <label>Forma Jurídica *</label>
+                    <div className="form-group">
+                        <label className="label">Tipo de Entidad *</label>
                         <select
+                            className="input"
                             value={formData.legalForm}
                             onChange={(e) => setFormData({ ...formData, legalForm: e.target.value })}
                             required
@@ -236,89 +243,78 @@ function NewCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                         </select>
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Razón Social / Nombre Comercial *</label>
+                    <div className="form-group">
+                        <label className="label">Razón Social o Nombre Legal *</label>
                         <input
                             type="text"
+                            className="input"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Ej: Empresa Demo S.A. de C.V."
+                            placeholder="Ej: Inversiones ABC S.A. de C.V."
                             required
                         />
                     </div>
 
                     <div className={styles.formRow}>
-                        <div className={styles.formGroup}>
-                            <label>NIT (Número de Identificación Tributaria) *</label>
+                        <div className="form-group">
+                            <label className="label">NIT *</label>
                             <input
                                 type="text"
+                                className="input"
                                 value={formData.nit}
                                 onChange={(e) => setFormData({ ...formData, nit: e.target.value })}
                                 placeholder="0614-210188-101-2"
                                 maxLength={17}
                                 required
                             />
-                            <small>Formato: XXXX-XXXXXX-XXX-X</small>
                         </div>
 
-                        <div className={styles.formGroup}>
-                            <label>NRC (Número de Registro de Contribuyente) *</label>
+                        <div className="form-group">
+                            <label className="label">NRC *</label>
                             <input
                                 type="text"
+                                className="input"
                                 value={formData.nrc}
                                 onChange={(e) => setFormData({ ...formData, nrc: e.target.value })}
-                                placeholder="123456"
-                                maxLength={7}
+                                placeholder="123456-7"
+                                maxLength={10}
                                 required
                             />
-                            <small>6-7 dígitos</small>
                         </div>
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Actividad Económica *</label>
+                    <div className="form-group">
+                        <label className="label">Giro o Actividad Económica *</label>
                         <select
+                            className="input"
                             value={formData.economicActivity}
                             onChange={(e) => setFormData({ ...formData, economicActivity: e.target.value })}
                             required
                         >
-                            <option value="">Seleccionar...</option>
+                            <option value="">Seleccionar actividad...</option>
                             {economicActivities.map(activity => (
                                 <option key={activity} value={activity}>{activity}</option>
                             ))}
                         </select>
                     </div>
 
-                    {['SA', 'SRL'].includes(formData.legalForm) && (
-                        <div className={styles.formGroup}>
-                            <label>Capital Social (USD) *</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={formData.shareCapital}
-                                onChange={(e) => setFormData({ ...formData, shareCapital: e.target.value })}
-                                placeholder="2000.00"
-                                required
-                            />
-                            <small>Mínimo recomendado: $2,000.00</small>
-                        </div>
-                    )}
-
-                    <div className={styles.formGroup}>
-                        <label>Dirección Completa *</label>
+                    <div className="form-group">
+                        <label className="label">Dirección Fiscal *</label>
                         <textarea
+                            className="input"
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            placeholder="Colonia Escalón, Calle Principal #123, San Salvador"
-                            rows={3}
+                            placeholder="Dirección completa exacta"
+                            rows={2}
                             required
                         />
                     </div>
 
                     <div className={styles.formRow}>
-                        <div className={styles.formGroup}>
-                            <label>Departamento *</label>
+                        <div className="form-group">
+                            <label className="label">Departamento *</label>
                             <select
+                                className="input"
                                 value={formData.department}
                                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                                 required
@@ -330,13 +326,14 @@ function NewCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                             </select>
                         </div>
 
-                        <div className={styles.formGroup}>
-                            <label>Municipio *</label>
+                        <div className="form-group">
+                            <label className="label">Municipio *</label>
                             <input
                                 type="text"
+                                className="input"
                                 value={formData.municipality}
                                 onChange={(e) => setFormData({ ...formData, municipality: e.target.value })}
-                                placeholder="Ej: San Salvador"
+                                placeholder="Ej: Antiguo Cuscatlán"
                                 required
                             />
                         </div>
@@ -344,16 +341,19 @@ function NewCompanyModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
                     {error && (
                         <div className={styles.error}>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 4h2v5H7V4zm0 6h2v2H7v-2z" />
-                            </svg>
+                            <span style={{ fontSize: '1.2rem' }}>⚠️</span>
                             {error}
                         </div>
                     )}
 
-                    <button type="submit" disabled={loading} className={styles.submitBtn}>
-                        {loading ? 'Creando empresa...' : 'Crear Empresa'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
+                            Cerrar
+                        </button>
+                        <button type="submit" disabled={loading} className="btn btn-primary" style={{ flex: 2 }}>
+                            {loading ? 'Registrando...' : 'Finalizar Registro'}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

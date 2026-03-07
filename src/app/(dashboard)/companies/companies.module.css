@@ -1,180 +1,187 @@
-.container {
-    min-height: 100vh;
-    background: var(--background);
-    padding: 2.5rem;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 3.5rem;
-    padding-bottom: 2rem;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.header h1 {
-    font-size: 2.75rem;
-    font-weight: 800;
-    color: var(--foreground);
-    margin: 0;
-    letter-spacing: -1.5px;
-}
-
-.header p {
-    color: #64748b;
-    font-size: 1.1rem;
-    font-weight: 500;
-    margin-top: 0.5rem;
-}
-
-.addButton {
-    padding: 1rem 2.25rem;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 1.05rem;
-    box-shadow: 0 10px 15px -3px rgba(0, 119, 182, 0.3);
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.addButton:hover {
-    background: var(--primary-hover);
-    transform: translateY(-3px);
-    box-shadow: 0 20px 25px -5px rgba(0, 119, 182, 0.4);
-}
-
-.grid {
+.companiesList {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 2.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
 }
 
 .companyCard {
-    background: #ffffff;
+    background: white;
     border: 1px solid var(--border);
-    border-radius: 2rem;
-    padding: 3rem;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
+    transition: all 0.2s;
     position: relative;
-    overflow: hidden;
 }
 
 .companyCard:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 30px 60px -12px rgba(0, 35, 102, 0.12);
-    border-color: var(--primary);
+    box-shadow: var(--shadow);
+    border-color: #cbd5e1;
 }
 
 .cardHeader {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 1.25rem;
+    width: 56px;
+    height: 56px;
     background: #f1f5f9;
-    color: var(--primary);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    border: 1px solid #e2e8f0;
+    font-size: 1.75rem;
 }
 
-.cardHeader h3 {
+.companyInfo h3 {
     margin: 0;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--foreground);
-    letter-spacing: -0.5px;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.legalForm {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
 }
 
 .details {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     background: #f8fafc;
-    padding: 1.5rem;
-    border-radius: 1.5rem;
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
 }
 
 .detailRow {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    font-size: 0.95rem;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
     color: #64748b;
-    font-weight: 500;
 }
 
-.detailIcon {
-    color: var(--primary);
-}
-
-.cardActions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-}
-
-.editBtn,
-.deleteBtn {
-    padding: 1rem;
-    border-radius: 1rem;
-    font-weight: 750;
+.selectBtn {
+    width: 100%;
+    padding: 0.75rem;
+    background: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+}
+
+.selectBtn:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
-    font-size: 0.95rem;
+    z-index: 1000;
 }
 
-.editBtn {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+.modal {
+    background: white;
+    border-radius: var(--radius-lg);
+    width: 700px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
 }
 
-.editBtn:hover {
-    background: #e2e8f0;
-    color: var(--primary);
+.modalHeader {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
 }
 
-.deleteBtn {
+.closeBtn {
+    background: transparent;
+    border: none;
+    font-size: 1.25rem;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.modalForm {
+    padding: 1.5rem;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.error {
     background: #fef2f2;
-    color: #ef4444;
-    border: 1px solid #fee2e2;
+    color: #991b1b;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.deleteBtn:hover {
-    background: #fee2e2;
-    color: #dc2626;
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
 }
 
-@media (max-width : 640px) {
-    .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.5rem;
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(37, 99, 235, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .companiesList {
+        grid-template-columns: 1fr;
     }
 
-    .grid {
+    .formRow {
         grid-template-columns: 1fr;
     }
 }

@@ -94,65 +94,70 @@ export default function SecurityDashboard() {
     };
 
     return (
-        <div className={styles.container}>
-            <header className={styles.header}>
-                <h1>🛡️ Security Dashboard</h1>
-                <p>Monitoreo y auditoría del sistema</p>
-            </header>
+        <div className="animate-fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
+                <div>
+                    <h1 style={{ marginBottom: '0.25rem' }}>Security Dashboard</h1>
+                    <p>Monitoreo preventivo y auditoría de accesos</p>
+                </div>
+                <button className="btn btn-outline" onClick={fetchDashboardData}>
+                    🔄 Actualizar
+                </button>
+            </div>
 
-            {/* Stats Cards */}
+            {/* Stats Grid */}
             <div className={styles.statsGrid}>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon}>📊</div>
-                    <div className={styles.statContent}>
-                        <h3>Total de Logs</h3>
-                        <p className={styles.statValue}>{stats?.totalLogs || 0}</p>
-                        <span className={styles.statLabel}>Registros totales</span>
+                <div className="card shadow-sm">
+                    <div className={styles.statHeader}>
+                        <span style={{ fontSize: '1.5rem' }}>📊</span>
+                        <span className={styles.statLabel}>Registros Totales</span>
                     </div>
+                    <div className={styles.statValue}>{stats?.totalLogs || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>Logs históricos</div>
                 </div>
 
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon}>🔐</div>
-                    <div className={styles.statContent}>
-                        <h3>Logins Recientes</h3>
-                        <p className={styles.statValue}>{stats?.recentLogins || 0}</p>
-                        <span className={styles.statLabel}>Últimas 24 horas</span>
+                <div className="card shadow-sm">
+                    <div className={styles.statHeader}>
+                        <span style={{ fontSize: '1.5rem' }}>🔐</span>
+                        <span className={styles.statLabel}>Logins (24h)</span>
                     </div>
+                    <div className={styles.statValue}>{stats?.recentLogins || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>Sesiones activas</div>
                 </div>
 
-                <div className={`${styles.statCard} ${styles.warningCard}`}>
-                    <div className={styles.statIcon}>⚠️</div>
-                    <div className={styles.statContent}>
-                        <h3>Acciones Fallidas</h3>
-                        <p className={styles.statValue}>{stats?.failedActions || 0}</p>
-                        <span className={styles.statLabel}>Requiere atención</span>
+                <div className="card shadow-sm" style={{ borderLeft: '4px solid var(--warning)' }}>
+                    <div className={styles.statHeader}>
+                        <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                        <span className={styles.statLabel}>Fallos de Auth</span>
                     </div>
+                    <div className={styles.statValue} style={{ color: 'var(--warning)' }}>{stats?.failedActions || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>Intentos denegados</div>
                 </div>
 
-                <div className={`${styles.statCard} ${styles.dangerCard}`}>
-                    <div className={styles.statIcon}>🚨</div>
-                    <div className={styles.statContent}>
-                        <h3>Actividad Sospechosa</h3>
-                        <p className={styles.statValue}>{stats?.suspiciousActivity || 0}</p>
-                        <span className={styles.statLabel}>Alertas de seguridad</span>
+                <div className="card shadow-sm" style={{ borderLeft: '4px solid var(--error)' }}>
+                    <div className={styles.statHeader}>
+                        <span style={{ fontSize: '1.5rem' }}>🚨</span>
+                        <span className={styles.statLabel}>Alertas Críticas</span>
                     </div>
+                    <div className={styles.statValue} style={{ color: 'var(--error)' }}>{stats?.suspiciousActivity || 0}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem' }}>Acciones bloqueadas</div>
                 </div>
             </div>
 
-            {/* Recent Logs */}
-            <div className={styles.logsSection}>
-                <div className={styles.sectionHeader}>
-                    <h2>📋 Actividad Reciente</h2>
-                    <button onClick={() => router.push('/security/audit-logs')} className={styles.viewAllBtn}>
-                        Ver todos los logs →
+            {/* Recent Logs Section */}
+            <div className="card" style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h3 style={{ margin: 0 }}>📋 Actividad Reciente</h3>
+                    <button onClick={() => router.push('/security/audit-logs')} className="btn btn-ghost" style={{ fontSize: '0.8rem' }}>
+                        Ver todo el historial →
                     </button>
                 </div>
 
-                <div className={styles.logsTable}>
-                    <table>
+                <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
                         <thead>
                             <tr>
-                                <th>Timestamp</th>
+                                <th>Fecha y Hora</th>
                                 <th>Usuario</th>
                                 <th>Acción</th>
                                 <th>Recurso</th>
@@ -163,21 +168,26 @@ export default function SecurityDashboard() {
                         <tbody>
                             {recentLogs.map((log) => (
                                 <tr key={log.id}>
-                                    <td>{new Date(log.timestamp).toLocaleString('es-MX')}</td>
+                                    <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontWeight: 500 }}>{new Date(log.timestamp).toLocaleDateString()}</span>
+                                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{new Date(log.timestamp).toLocaleTimeString()}</span>
+                                        </div>
+                                    </td>
                                     <td>
                                         <div className={styles.userCell}>
                                             <span className={styles.email}>{log.user?.email || 'Sistema'}</span>
                                             {log.user?.role && (
-                                                <span className={styles.role}>{log.user.role}</span>
+                                                <span className={styles.roleBadge}>{log.user.role}</span>
                                             )}
                                         </div>
                                     </td>
-                                    <td><code>{log.action}</code></td>
-                                    <td>{log.resource}</td>
-                                    <td><code>{log.ipAddress}</code></td>
+                                    <td><code className={styles.code}>{log.action}</code></td>
+                                    <td><span style={{ color: '#64748b' }}>{log.resource}</span></td>
+                                    <td><code className={styles.code}>{log.ipAddress}</code></td>
                                     <td>
                                         <span className={`${styles.badge} ${getResultColor(log.result)}`}>
-                                            {log.result}
+                                            {log.result === 'success' ? 'Éxito' : log.result}
                                         </span>
                                     </td>
                                 </tr>
@@ -186,28 +196,28 @@ export default function SecurityDashboard() {
                     </table>
 
                     {recentLogs.length === 0 && (
-                        <div className={styles.emptyState}>
-                            <p>No hay logs recientes</p>
+                        <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                            No hay actividad reciente registrada
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Quick Actions */}
-            <div className={styles.actionsSection}>
-                <h2>⚡ Acciones Rápidas</h2>
-                <div className={styles.actionsGrid}>
-                    <button className={styles.actionBtn} onClick={() => router.push('/security/audit-logs')}>
-                        📜 Ver Audit Logs Completos
+            <div className="card">
+                <h3 style={{ marginBottom: '1.25rem' }}>⚡ Acciones Rápidas</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                    <button className="btn btn-outline" onClick={() => router.push('/security/audit-logs')}>
+                        📜 Auditoría Completa
                     </button>
-                    <button className={styles.actionBtn} onClick={() => router.push('/security/users')}>
+                    <button className="btn btn-outline" onClick={() => router.push('/security/users')}>
                         👥 Gestionar Usuarios
                     </button>
-                    <button className={styles.actionBtn} onClick={() => router.push('/security/alerts')}>
+                    <button className="btn btn-outline" onClick={() => router.push('/security/alerts')}>
                         🔔 Configurar Alertas
                     </button>
-                    <button className={styles.actionBtn} onClick={fetchDashboardData}>
-                        🔄 Refrescar Datos
+                    <button className="btn btn-primary" onClick={fetchDashboardData}>
+                        🔄 Sincronizar Datos
                     </button>
                 </div>
             </div>

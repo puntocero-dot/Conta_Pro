@@ -72,17 +72,17 @@ export default function TransactionsPage() {
     }
 
     return (
-        <div className={styles.container}>
-            <div className={styles.header}>
+        <div className="animate-fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
                 <div>
-                    <h1>💰 Transacciones</h1>
-                    <p>Gestiona tus ingresos y egresos</p>
+                    <h1>Transacciones</h1>
+                    <p>Historial financiero y control de caja</p>
                 </div>
                 <button
                     onClick={() => setShowNewModal(true)}
-                    className={styles.newButton}
+                    className="btn btn-primary"
                 >
-                    + Nueva Transacción
+                    <span style={{ fontSize: '1.2rem' }}>+</span> Nueva Transacción
                 </button>
             </div>
 
@@ -107,7 +107,7 @@ export default function TransactionsPage() {
                 <div className={`${styles.statCard} ${balance >= 0 ? styles.positive : styles.negative}`}>
                     <div className={styles.statIcon}>{balance >= 0 ? '✅' : '⚠️'}</div>
                     <div className={styles.statContent}>
-                        <p className={styles.statLabel}>Balance</p>
+                        <p className={styles.statLabel}>Balance Neto</p>
                         <h3 className={styles.statValue}>${balance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
                     </div>
                 </div>
@@ -138,24 +138,29 @@ export default function TransactionsPage() {
             {/* Transactions List */}
             <div className={styles.transactionsList}>
                 {filteredTransactions.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        <p>📭 No hay transacciones aún</p>
-                        <button onClick={() => setShowNewModal(true)}>
-                            Crear primera transacción
+                    <div className="card" style={{ textAlign: 'center', padding: '5rem 2rem', border: 'none' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1.5rem', opacity: 0.5 }}>📭</div>
+                        <h3>Sin transacciones</h3>
+                        <p style={{ color: '#64748b', marginBottom: '2rem' }}>No se encontraron registros para este filtro.</p>
+                        <button onClick={() => setShowNewModal(true)} className="btn btn-secondary">
+                            Crear Transacción
                         </button>
                     </div>
                 ) : (
                     filteredTransactions.map(transaction => (
                         <div key={transaction.id} className={styles.transactionCard}>
-                            <div className={styles.transactionIcon} style={{ background: transaction.category.color }}>
-                                {transaction.category.icon}
+                            <div className={styles.transactionIcon} style={{ background: transaction.category?.color || '#f1f5f9' }}>
+                                {transaction.category?.icon || '💰'}
                             </div>
                             <div className={styles.transactionInfo}>
                                 <h4>{transaction.description}</h4>
-                                <p className={styles.transactionCategory}>{transaction.category.name}</p>
-                                <p className={styles.transactionDate}>
-                                    {new Date(transaction.date).toLocaleDateString('es-MX')}
-                                </p>
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                    <span className={styles.transactionCategory}>{transaction.category?.name || 'General'}</span>
+                                    <span style={{ color: '#cbd5e1' }}>•</span>
+                                    <span className={styles.transactionDate}>
+                                        {new Date(transaction.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </span>
+                                </div>
                             </div>
                             <div className={`${styles.transactionAmount} ${transaction.type === 'INGRESO' ? styles.amountIncome : styles.amountExpense
                                 }`}>
@@ -212,7 +217,7 @@ function NewTransactionModal({ onClose, onSuccess }: { onClose: () => void; onSu
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error al crear transacción');
+            alert('Error de conexión');
         } finally {
             setLoading(false);
         }
@@ -222,13 +227,13 @@ function NewTransactionModal({ onClose, onSuccess }: { onClose: () => void; onSu
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <div className={styles.modalHeader}>
-                    <h2>Nueva Transacción</h2>
+                    <h3 style={{ margin: 0 }}>Nueva Transacción</h3>
                     <button onClick={onClose} className={styles.closeBtn}>✕</button>
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.modalForm}>
-                    <div className={styles.formGroup}>
-                        <label>Tipo</label>
+                    <div className="form-group">
+                        <label className="label">Tipo de Movimiento</label>
                         <div className={styles.typeButtons}>
                             <button
                                 type="button"
@@ -247,10 +252,11 @@ function NewTransactionModal({ onClose, onSuccess }: { onClose: () => void; onSu
                         </div>
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Monto</label>
+                    <div className="form-group">
+                        <label className="label">Monto (USD)</label>
                         <input
                             type="number"
+                            className="input"
                             step="0.01"
                             required
                             value={formData.amount}
@@ -259,30 +265,37 @@ function NewTransactionModal({ onClose, onSuccess }: { onClose: () => void; onSu
                         />
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Descripción</label>
+                    <div className="form-group">
+                        <label className="label">Descripción</label>
                         <input
                             type="text"
+                            className="input"
                             required
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Ej: Venta de producto"
+                            placeholder="Ej: Cobro factura #123"
                         />
                     </div>
 
-                    <div className={styles.formGroup}>
-                        <label>Fecha</label>
+                    <div className="form-group">
+                        <label className="label">Fecha</label>
                         <input
                             type="date"
+                            className="input"
                             required
                             value={formData.date}
                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                         />
                     </div>
 
-                    <button type="submit" disabled={loading} className={styles.submitBtn}>
-                        {loading ? 'Guardando...' : 'Guardar Transacción'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
+                            Cerrar
+                        </button>
+                        <button type="submit" disabled={loading} className="btn btn-primary" style={{ flex: 2 }}>
+                            {loading ? 'Guardando...' : 'Registrar Movimiento'}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

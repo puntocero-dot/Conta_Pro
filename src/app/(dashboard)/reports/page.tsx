@@ -67,13 +67,13 @@ export default function ReportsPage() {
     ];
 
     return (
-        <div className={styles.container}>
-            <div className={styles.header}>
+        <div className="animate-fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
                 <div>
-                    <h1>📊 Reportes Financieros</h1>
-                    <p>Análisis detallado de tus finanzas</p>
+                    <h1>Reportes Financieros</h1>
+                    <p>Estados de resultados y análisis periódico</p>
                 </div>
-                <button onClick={downloadPDF} className={styles.downloadBtn}>
+                <button onClick={downloadPDF} className="btn btn-secondary">
                     📄 Descargar PDF
                 </button>
             </div>
@@ -81,7 +81,7 @@ export default function ReportsPage() {
             {/* Period Selector */}
             <div className={styles.periodSelector}>
                 <div className={styles.selectGroup}>
-                    <label>Mes</label>
+                    <label>Período</label>
                     <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))}>
                         {monthNames.map((name, index) => (
                             <option key={index} value={index + 1}>{name}</option>
@@ -89,7 +89,6 @@ export default function ReportsPage() {
                     </select>
                 </div>
                 <div className={styles.selectGroup}>
-                    <label>Año</label>
                     <select value={year} onChange={(e) => setYear(parseInt(e.target.value))}>
                         {[2024, 2025, 2026].map(y => (
                             <option key={y} value={y}>{y}</option>
@@ -105,7 +104,7 @@ export default function ReportsPage() {
                         <div className={`${styles.summaryCard} ${styles.income}`}>
                             <div className={styles.cardIcon}>📈</div>
                             <div className={styles.cardContent}>
-                                <p>Ingresos Totales</p>
+                                <p>Ingresos</p>
                                 <h2>${reportData.totalIngresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                             </div>
                         </div>
@@ -113,7 +112,7 @@ export default function ReportsPage() {
                         <div className={`${styles.summaryCard} ${styles.expense}`}>
                             <div className={styles.cardIcon}>📉</div>
                             <div className={styles.cardContent}>
-                                <p>Egresos Totales</p>
+                                <p>Egresos</p>
                                 <h2>${reportData.totalEgresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                             </div>
                         </div>
@@ -121,7 +120,7 @@ export default function ReportsPage() {
                         <div className={`${styles.summaryCard} ${styles.balance}`}>
                             <div className={styles.cardIcon}>💰</div>
                             <div className={styles.cardContent}>
-                                <p>Balance Neto</p>
+                                <p>Balance</p>
                                 <h2 className={reportData.balance >= 0 ? styles.positive : styles.negative}>
                                     ${reportData.balance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                 </h2>
@@ -131,53 +130,57 @@ export default function ReportsPage() {
                         <div className={`${styles.summaryCard} ${styles.tax}`}>
                             <div className={styles.cardIcon}>🏛️</div>
                             <div className={styles.cardContent}>
-                                <p>IVA Estimado (13%)</p>
+                                <p>IVA 13%</p>
                                 <h2>${reportData.iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                             </div>
                         </div>
                     </div>
 
                     {/* Category Breakdown */}
-                    <div className={styles.categorySection}>
+                    <div className={styles.section}>
                         <h3>📁 Desglose por Categoría</h3>
                         <div className={styles.categoryList}>
-                            {reportData.byCategory.map((cat, index) => (
-                                <div key={index} className={styles.categoryItem}>
-                                    <div className={styles.categoryInfo}>
-                                        <span className={styles.categoryName}>{cat.name}</span>
-                                        <span className={styles.categoryAmount}>
-                                            ${cat.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                                        </span>
+                            {reportData.byCategory.length === 0 ? (
+                                <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No hay datos para este período</p>
+                            ) : (
+                                reportData.byCategory.map((cat, index) => (
+                                    <div key={index} className={styles.categoryItem}>
+                                        <div className={styles.categoryInfo}>
+                                            <span className={styles.categoryName}>{cat.name}</span>
+                                            <span className={styles.categoryAmount}>
+                                                ${cat.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                        <div className={styles.progressBar}>
+                                            <div
+                                                className={styles.progressFill}
+                                                style={{ width: `${cat.percentage}%` }}
+                                            ></div>
+                                        </div>
+                                        <span className={styles.percentage}>{cat.percentage.toFixed(1)}%</span>
                                     </div>
-                                    <div className={styles.progressBar}>
-                                        <div
-                                            className={styles.progressFill}
-                                            style={{ width: `${cat.percentage}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className={styles.percentage}>{cat.percentage.toFixed(1)}%</span>
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
                     </div>
 
                     {/* Statistics */}
-                    <div className={styles.statsSection}>
-                        <h3>📈 Estadísticas del Período</h3>
+                    <div className={styles.section}>
+                        <h3>📊 Métricas de Eficiencia</h3>
                         <div className={styles.statsList}>
                             <div className={styles.statItem}>
-                                <span>Total de Transacciones</span>
+                                <span>Operaciones</span>
                                 <strong>{reportData.transactionCount}</strong>
                             </div>
                             <div className={styles.statItem}>
-                                <span>Promedio de Ingresos</span>
+                                <span>Ticket Promedio</span>
                                 <strong>
                                     ${(reportData.totalIngresos / (reportData.transactionCount || 1)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                 </strong>
                             </div>
                             <div className={styles.statItem}>
-                                <span>Margen de Ganancia</span>
-                                <strong>
+                                <span>Margen Neto</span>
+                                <strong className={reportData.balance >= 0 ? styles.positive : styles.negative}>
                                     {((reportData.balance / (reportData.totalIngresos || 1)) * 100).toFixed(1)}%
                                 </strong>
                             </div>
