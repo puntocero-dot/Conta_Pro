@@ -3,13 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
 
 export async function GET(request: NextRequest) {
-    const auth = await getAuthFromRequest(request);
-
-    if (!auth) {
-        return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
     try {
+        const auth = await getAuthFromRequest(request);
+
+        if (!auth) {
+            return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        }
+
         const dbUser = await prisma.user.findUnique({
             where: { id: auth.userId },
             select: {
@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json(dbUser);
-    } catch (error) {
-        console.error('Error fetching user:', error);
-        return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Error in GET /api/users/me:', error);
+        return NextResponse.json(
+            { error: 'Error interno del servidor', details: error.message },
+            { status: 500 }
+        );
     }
 }

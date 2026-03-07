@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './transactions.module.css';
 
 interface Transaction {
@@ -20,23 +21,22 @@ interface Transaction {
 
 export default function TransactionsPage() {
     const { user, loading: authLoading } = useAuth();
+    const { activeCompanyId, isLoading: companyLoading } = useCompany();
     const router = useRouter();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'INGRESO' | 'EGRESO'>('ALL');
 
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        } else if (user) {
-            fetchTransactions();
-        }
-    }, [user, authLoading, router]);
-
-    const fetchTransactions = async () => {
+    const fetchTransactions = useCallback(async () => {
+        if (!activeCompanyId) return;
+        setLoading(true);
         try {
-            const response = await fetch('/api/transactions');
+            const response = await fetch('/api/transactions', {
+                headers: {
+                    'x-company-id': activeCompanyId
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
                 setTransactions(data.transactions || []);
@@ -46,7 +46,22 @@ export default function TransactionsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeCompanyId]);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
+
+    useEffect(() => {
+        if (activeCompanyId) {
+            fetchTransactions();
+        } else {
+            setTransactions([]);
+            setLoading(false);
+        }
+    }, [activeCompanyId, fetchTransactions]);
 
     const filteredTransactions = transactions.filter(t =>
         filter === 'ALL' || t.type === filter
@@ -62,7 +77,7 @@ export default function TransactionsPage() {
 
     const balance = totalIngresos - totalEgresos;
 
-    if (authLoading || loading) {
+    if (authLoading || companyLoading || (loading && transactions.length === 0)) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
@@ -81,100 +96,115 @@ export default function TransactionsPage() {
                 <button
                     onClick={() => setShowNewModal(true)}
                     className="btn btn-primary"
+                    disabled={!activeCompanyId}
                 >
                     <span style={{ fontSize: '1.2rem' }}>+</span> Nueva Transacción
                 </button>
             </div>
 
-            {/* Stats Cards */}
-            <div className={styles.statsGrid}>
-                <div className={`${styles.statCard} ${styles.income}`}>
-                    <div className={styles.statIcon}>📈</div>
-                    <div className={styles.statContent}>
-                        <p className={styles.statLabel}>Ingresos</p>
-                        <h3 className={styles.statValue}>${totalIngresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
-                    </div>
+            {!activeCompanyId && (
+                <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed #cbd5e1' }}>
+                    <p>Selecciona una empresa en el panel lateral para ver sus transacciones.</p>
                 </div>
+            )}
 
-                <div className={`${styles.statCard} ${styles.expense}`}>
-                    <div className={styles.statIcon}>📉</div>
-                    <div className={styles.statContent}>
-                        <p className={styles.statLabel}>Egresos</p>
-                        <h3 className={styles.statValue}>${totalEgresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
-                    </div>
-                </div>
-
-                <div className={`${styles.statCard} ${balance >= 0 ? styles.positive : styles.negative}`}>
-                    <div className={styles.statIcon}>{balance >= 0 ? '✅' : '⚠️'}</div>
-                    <div className={styles.statContent}>
-                        <p className={styles.statLabel}>Balance Neto</p>
-                        <h3 className={styles.statValue}>${balance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
-                    </div>
-                </div>
-            </div>
-
-            {/* Filters */}
-            <div className={styles.filters}>
-                <button
-                    className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
-                    onClick={() => setFilter('ALL')}
-                >
-                    Todas
-                </button>
-                <button
-                    className={filter === 'INGRESO' ? styles.filterActive : styles.filterBtn}
-                    onClick={() => setFilter('INGRESO')}
-                >
-                    Ingresos
-                </button>
-                <button
-                    className={filter === 'EGRESO' ? styles.filterActive : styles.filterBtn}
-                    onClick={() => setFilter('EGRESO')}
-                >
-                    Egresos
-                </button>
-            </div>
-
-            {/* Transactions List */}
-            <div className={styles.transactionsList}>
-                {filteredTransactions.length === 0 ? (
-                    <div className="card" style={{ textAlign: 'center', padding: '5rem 2rem', border: 'none' }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '1.5rem', opacity: 0.5 }}>📭</div>
-                        <h3>Sin transacciones</h3>
-                        <p style={{ color: '#64748b', marginBottom: '2rem' }}>No se encontraron registros para este filtro.</p>
-                        <button onClick={() => setShowNewModal(true)} className="btn btn-secondary">
-                            Crear Transacción
-                        </button>
-                    </div>
-                ) : (
-                    filteredTransactions.map(transaction => (
-                        <div key={transaction.id} className={styles.transactionCard}>
-                            <div className={styles.transactionIcon} style={{ background: transaction.category?.color || '#f1f5f9' }}>
-                                {transaction.category?.icon || '💰'}
-                            </div>
-                            <div className={styles.transactionInfo}>
-                                <h4>{transaction.description}</h4>
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                    <span className={styles.transactionCategory}>{transaction.category?.name || 'General'}</span>
-                                    <span style={{ color: '#cbd5e1' }}>•</span>
-                                    <span className={styles.transactionDate}>
-                                        {new Date(transaction.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className={`${styles.transactionAmount} ${transaction.type === 'INGRESO' ? styles.amountIncome : styles.amountExpense
-                                }`}>
-                                {transaction.type === 'INGRESO' ? '+' : '-'}
-                                ${transaction.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            {activeCompanyId && (
+                <>
+                    {/* Stats Cards */}
+                    <div className={styles.statsGrid}>
+                        <div className={`${styles.statCard} ${styles.income}`}>
+                            <div className={styles.statIcon}>📈</div>
+                            <div className={styles.statContent}>
+                                <p className={styles.statLabel}>Ingresos</p>
+                                <h3 className={styles.statValue}>${totalIngresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
-                    ))
-                )}
-            </div>
+
+                        <div className={`${styles.statCard} ${styles.expense}`}>
+                            <div className={styles.statIcon}>📉</div>
+                            <div className={styles.statContent}>
+                                <p className={styles.statLabel}>Egresos</p>
+                                <h3 className={styles.statValue}>${totalEgresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                            </div>
+                        </div>
+
+                        <div className={`${styles.statCard} ${balance >= 0 ? styles.positive : styles.negative}`}>
+                            <div className={styles.statIcon}>{balance >= 0 ? '✅' : '⚠️'}</div>
+                            <div className={styles.statContent}>
+                                <p className={styles.statLabel}>Balance Neto</p>
+                                <h3 className={styles.statValue}>${balance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Filters */}
+                    <div className={styles.filters}>
+                        <button
+                            className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
+                            onClick={() => setFilter('ALL')}
+                        >
+                            Todas
+                        </button>
+                        <button
+                            className={filter === 'INGRESO' ? styles.filterActive : styles.filterBtn}
+                            onClick={() => setFilter('INGRESO')}
+                        >
+                            Ingresos
+                        </button>
+                        <button
+                            className={filter === 'EGRESO' ? styles.filterActive : styles.filterBtn}
+                            onClick={() => setFilter('EGRESO')}
+                        >
+                            Egresos
+                        </button>
+                    </div>
+
+                    {/* Transactions List */}
+                    <div className={styles.transactionsList}>
+                        {filteredTransactions.length === 0 ? (
+                            <div className="card" style={{ textAlign: 'center', padding: '5rem 2rem', border: 'none' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '1.5rem', opacity: 0.5 }}>📭</div>
+                                <h3>Sin transacciones</h3>
+                                <p style={{ color: '#64748b', marginBottom: '2rem' }}>No se encontraron registros para este filtro.</p>
+                                <button
+                                    onClick={() => setShowNewModal(true)}
+                                    className="btn btn-secondary"
+                                    disabled={!activeCompanyId}
+                                >
+                                    Crear Transacción
+                                </button>
+                            </div>
+                        ) : (
+                            filteredTransactions.map(transaction => (
+                                <div key={transaction.id} className={styles.transactionCard}>
+                                    <div className={styles.transactionIcon} style={{ background: transaction.category?.color || '#f1f5f9' }}>
+                                        {transaction.category?.icon || '💰'}
+                                    </div>
+                                    <div className={styles.transactionInfo}>
+                                        <h4>{transaction.description}</h4>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                            <span className={styles.transactionCategory}>{transaction.category?.name || 'General'}</span>
+                                            <span style={{ color: '#cbd5e1' }}>•</span>
+                                            <span className={styles.transactionDate}>
+                                                {new Date(transaction.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className={`${styles.transactionAmount} ${transaction.type === 'INGRESO' ? styles.amountIncome : styles.amountExpense}`}>
+                                        {transaction.type === 'INGRESO' ? '+' : '-'}
+                                        ${transaction.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </>
+            )}
 
             {/* New Transaction Modal */}
-            {showNewModal && (
+            {showNewModal && activeCompanyId && (
                 <NewTransactionModal
+                    companyId={activeCompanyId}
                     onClose={() => setShowNewModal(false)}
                     onSuccess={() => {
                         setShowNewModal(false);
@@ -186,7 +216,15 @@ export default function TransactionsPage() {
     );
 }
 
-function NewTransactionModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function NewTransactionModal({
+    companyId,
+    onClose,
+    onSuccess
+}: {
+    companyId: string;
+    onClose: () => void;
+    onSuccess: () => void
+}) {
     const [formData, setFormData] = useState({
         type: 'INGRESO' as 'INGRESO' | 'EGRESO',
         amount: '',
@@ -203,7 +241,10 @@ function NewTransactionModal({ onClose, onSuccess }: { onClose: () => void; onSu
         try {
             const response = await fetch('/api/transactions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-company-id': companyId
+                },
                 body: JSON.stringify({
                     ...formData,
                     amount: parseFloat(formData.amount),

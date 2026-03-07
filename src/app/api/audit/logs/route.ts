@@ -40,10 +40,10 @@ export async function GET(request: NextRequest) {
         const logs = await getAuditLogs(logFilters);
 
         return NextResponse.json(logs);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching audit logs:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Error al obtener registros de auditoría', details: error.message },
             { status: 500 }
         );
     }

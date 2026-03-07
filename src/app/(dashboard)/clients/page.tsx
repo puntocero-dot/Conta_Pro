@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './clients.module.css';
 
 interface Client {
@@ -19,23 +20,23 @@ interface Client {
 
 export default function ClientsPage() {
     const { user, loading: authLoading } = useAuth();
+    const { activeCompanyId, isLoading: companyLoading } = useCompany();
     const router = useRouter();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'INDIVIDUAL' | 'COMPANY'>('ALL');
+    const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        } else if (user) {
-            fetchClients();
-        }
-    }, [user, authLoading, router]);
-
-    const fetchClients = async () => {
+    const fetchClients = useCallback(async () => {
+        if (!activeCompanyId) return;
+        setLoading(true);
         try {
-            const response = await fetch('/api/clients');
+            const response = await fetch('/api/clients', {
+                headers: {
+                    'x-company-id': activeCompanyId
+                }
+            });
             if (response.ok) {
                 const data = await response.json();
                 setClients(data.clients || []);
@@ -45,15 +46,33 @@ export default function ClientsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeCompanyId]);
 
-    const filteredClients = clients.filter(c =>
-        filter === 'ALL' || c.type === filter
-    );
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
+
+    useEffect(() => {
+        if (activeCompanyId) {
+            fetchClients();
+        } else {
+            setClients([]);
+            setLoading(false);
+        }
+    }, [activeCompanyId, fetchClients]);
+
+    const filteredClients = clients.filter(c => {
+        const matchesFilter = filter === 'ALL' || c.type === filter;
+        const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (c.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+        return matchesFilter && matchesSearch;
+    });
 
     const totalBalance = clients.reduce((sum, c) => sum + c.balance, 0);
 
-    if (authLoading || loading) {
+    if (authLoading || companyLoading || (loading && clients.length === 0)) {
         return (
             <div className={styles.loading}>
                 <div className={styles.spinner}></div>
@@ -69,106 +88,132 @@ export default function ClientsPage() {
                     <h1 style={{ marginBottom: '0.25rem' }}>Clientes</h1>
                     <p>Gestión de cartera y contactos</p>
                 </div>
-                <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+                <button
+                    onClick={() => setShowNewModal(true)}
+                    className="btn btn-primary"
+                    disabled={!activeCompanyId}
+                >
                     <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
                 </button>
             </div>
 
-            {/* Stats */}
-            <div className={styles.statsGrid}>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon}>👥</div>
-                    <div className={styles.statInfo}>
-                        <p>Total Clientes</p>
-                        <h3>{clients.length}</h3>
-                    </div>
+            {!activeCompanyId && (
+                <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed #cbd5e1', marginBottom: '2rem' }}>
+                    <p>Selecciona una empresa en el panel lateral para gestionar sus clientes.</p>
                 </div>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon}>🏢</div>
-                    <div className={styles.statInfo}>
-                        <p>Empresas</p>
-                        <h3>{clients.filter(c => c.type === 'COMPANY').length}</h3>
-                    </div>
-                </div>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon}>💰</div>
-                    <div className={styles.statInfo}>
-                        <p>Saldo Pendiente</p>
-                        <h3>${totalBalance.toLocaleString('es-MX')}</h3>
-                    </div>
-                </div>
-            </div>
+            )}
 
-            {/* Content Section */}
-            <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <div className={styles.filters}>
-                        <button
-                            className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
-                            onClick={() => setFilter('ALL')}
-                        >
-                            Todos
-                        </button>
-                        <button
-                            className={filter === 'INDIVIDUAL' ? styles.filterActive : styles.filterBtn}
-                            onClick={() => setFilter('INDIVIDUAL')}
-                        >
-                            Personas
-                        </button>
-                        <button
-                            className={filter === 'COMPANY' ? styles.filterActive : styles.filterBtn}
-                            onClick={() => setFilter('COMPANY')}
-                        >
-                            Empresas
-                        </button>
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                        <input type="text" placeholder="Buscar cliente..." className="input" style={{ width: '240px', paddingLeft: '2.5rem' }} />
-                        <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
-                    </div>
-                </div>
-
-                <div className={styles.clientsList}>
-                    {filteredClients.length === 0 ? (
-                        <div className={styles.emptyState}>
-                            <div className={styles.emptyIcon}>👤</div>
-                            <h3>Sin resultados</h3>
-                            <p style={{ marginBottom: '1.5rem' }}>No se encontraron clientes para este filtro.</p>
-                            <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
-                                Crear Primer Cliente
-                            </button>
+            {activeCompanyId && (
+                <>
+                    {/* Stats */}
+                    <div className={styles.statsGrid}>
+                        <div className={styles.statCard}>
+                            <div className={styles.statIcon}>👥</div>
+                            <div className={styles.statInfo}>
+                                <p>Total Clientes</p>
+                                <h3>{clients.length}</h3>
+                            </div>
                         </div>
-                    ) : (
-                        filteredClients.map(client => (
-                            <div key={client.id} className={styles.clientCard}>
-                                <div className={styles.clientAvatar}>
-                                    {client.type === 'COMPANY' ? '🏢' : '👤'}
-                                </div>
-                                <div className={styles.clientInfo}>
-                                    <h4>{client.name}</h4>
-                                    <div className={styles.clientDetails}>
-                                        {client.email && <span>✉️ {client.email}</span>}
-                                        {client.phone && <span>📞 {client.phone}</span>}
-                                        {client.nit && <span>🏛️ {client.nit}</span>}
-                                    </div>
-                                </div>
-                                <div className={styles.clientBalance}>
-                                    <p>Saldo</p>
-                                    <h4 className={client.balance > 0 ? styles.positive : ''}>
-                                        ${client.balance.toLocaleString('es-MX')}
-                                    </h4>
-                                </div>
-                                <button className="btn btn-ghost" style={{ fontSize: '1.25rem' }}>
-                                    ⋮
+                        <div className={styles.statCard}>
+                            <div className={styles.statIcon}>🏢</div>
+                            <div className={styles.statInfo}>
+                                <p>Empresas</p>
+                                <h3>{clients.filter(c => c.type === 'COMPANY').length}</h3>
+                            </div>
+                        </div>
+                        <div className={styles.statCard}>
+                            <div className={styles.statIcon}>💰</div>
+                            <div className={styles.statInfo}>
+                                <p>Saldo Pendiente</p>
+                                <h3>${totalBalance.toLocaleString('es-MX')}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Content Section */}
+                    <div className="card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div className={styles.filters}>
+                                <button
+                                    className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
+                                    onClick={() => setFilter('ALL')}
+                                >
+                                    Todos
+                                </button>
+                                <button
+                                    className={filter === 'INDIVIDUAL' ? styles.filterActive : styles.filterBtn}
+                                    onClick={() => setFilter('INDIVIDUAL')}
+                                >
+                                    Personas
+                                </button>
+                                <button
+                                    className={filter === 'COMPANY' ? styles.filterActive : styles.filterBtn}
+                                    onClick={() => setFilter('COMPANY')}
+                                >
+                                    Empresas
                                 </button>
                             </div>
-                        ))
-                    )}
-                </div>
-            </div>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar cliente..."
+                                    className="input"
+                                    style={{ width: '240px', paddingLeft: '2.5rem' }}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                            </div>
+                        </div>
 
-            {showNewModal && (
+                        <div className={styles.clientsList}>
+                            {filteredClients.length === 0 ? (
+                                <div className={styles.emptyState}>
+                                    <div className={styles.emptyIcon}>👤</div>
+                                    <h3>Sin resultados</h3>
+                                    <p style={{ marginBottom: '1.5rem' }}>No se encontraron clientes para este filtro.</p>
+                                    <button
+                                        onClick={() => setShowNewModal(true)}
+                                        className="btn btn-primary"
+                                        disabled={!activeCompanyId}
+                                    >
+                                        Crear Primer Cliente
+                                    </button>
+                                </div>
+                            ) : (
+                                filteredClients.map(client => (
+                                    <div key={client.id} className={styles.clientCard}>
+                                        <div className={styles.clientAvatar}>
+                                            {client.type === 'COMPANY' ? '🏢' : '👤'}
+                                        </div>
+                                        <div className={styles.clientInfo}>
+                                            <h4>{client.name}</h4>
+                                            <div className={styles.clientDetails}>
+                                                {client.email && <span>✉️ {client.email}</span>}
+                                                {client.phone && <span>📞 {client.phone}</span>}
+                                                {client.nit && <span>🏛️ {client.nit}</span>}
+                                            </div>
+                                        </div>
+                                        <div className={styles.clientBalance}>
+                                            <p>Saldo</p>
+                                            <h4 className={client.balance > 0 ? styles.positive : ''}>
+                                                ${client.balance.toLocaleString('es-MX')}
+                                            </h4>
+                                        </div>
+                                        <button className="btn btn-ghost" style={{ fontSize: '1.25rem' }}>
+                                            ⋮
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {showNewModal && activeCompanyId && (
                 <NewClientModal
+                    companyId={activeCompanyId}
                     onClose={() => setShowNewModal(false)}
                     onSuccess={() => {
                         setShowNewModal(false);
@@ -180,7 +225,15 @@ export default function ClientsPage() {
     );
 }
 
-function NewClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function NewClientModal({
+    companyId,
+    onClose,
+    onSuccess
+}: {
+    companyId: string;
+    onClose: () => void;
+    onSuccess: () => void
+}) {
     const [formData, setFormData] = useState({
         type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'COMPANY',
         name: '',
@@ -199,7 +252,10 @@ function NewClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
         try {
             const response = await fetch('/api/clients', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-company-id': companyId
+                },
                 body: JSON.stringify(formData),
             });
 
@@ -209,6 +265,7 @@ function NewClientModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
                 alert('Error al crear cliente');
             }
         } catch (error) {
+            console.error('Error:', error);
             alert('Error al crear cliente');
         } finally {
             setLoading(false);

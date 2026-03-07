@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const TOKEN_EXPIRY = '7d';
@@ -50,6 +51,34 @@ export async function getAuthFromRequest(request: NextRequest): Promise<AuthPayl
     }
 
     return null;
+}
+
+/**
+ * Extrae y valida el ID de la empresa de una request
+ */
+export async function getCompanyIdFromRequest(request: NextRequest, userId: string): Promise<string | null> {
+    const headerCompanyId = request.headers.get('x-company-id');
+
+    if (headerCompanyId) {
+        // Validar que el usuario pertenece a esa empresa
+        const userWithSpecificCompany = await prisma.user.findFirst({
+            where: {
+                id: userId,
+                companies: {
+                    some: { id: headerCompanyId }
+                }
+            }
+        });
+        if (userWithSpecificCompany) return headerCompanyId;
+    }
+
+    // Fallback: primera empresa del usuario
+    const userWithFirstCompany = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { companies: { take: 1 } },
+    });
+
+    return userWithFirstCompany?.companies[0]?.id || null;
 }
 
 /**

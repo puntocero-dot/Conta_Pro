@@ -36,15 +36,46 @@ async function main() {
                 aml_limit: 10000,
             },
         },
+        {
+            country: 'SV',
+            triggerText: 'Servicios',
+            rules: {
+                debit: '510203',  // Gasto Servicios Públicos
+                credit: '110101', // Caja
+                tax: 0.13,
+                aml_limit: 10000,
+            },
+        },
+        {
+            country: 'SV',
+            triggerText: 'Alquiler',
+            rules: {
+                debit: '510301',  // Gasto Alquiler
+                credit: '110101', // Caja
+                tax: 0.13,
+                aml_limit: 10000,
+            },
+        },
+        {
+            country: 'SV',
+            triggerText: 'Honorarios',
+            rules: {
+                debit: '510302',  // Gasto Honorarios Profesionales
+                credit: '110101', // Caja
+                tax: 0.13,
+                aml_limit: 10000,
+            },
+        },
     ];
 
+    // Limpiar reglas existentes para evitar duplicados en el seed
+    await prisma.countryRule.deleteMany({
+        where: { country: 'SV' }
+    });
+
     for (const rule of rules) {
-        await prisma.countryRule.upsert({
-            where: {
-                id: `rule-sv-${rule.triggerText.toLowerCase()}`,
-            },
-            update: rule,
-            create: {
+        await prisma.countryRule.create({
+            data: {
                 id: `rule-sv-${rule.triggerText.toLowerCase()}`,
                 ...rule,
             },

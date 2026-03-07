@@ -3,27 +3,53 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { encrypt } from '@/lib/encryption/crypto';
 import { TransactionType } from '@prisma/client';
+import { getAuthFromRequest } from '@/lib/auth/jwt';
 
 export async function GET(request: NextRequest) {
     try {
-        // Obtener userId del header de autenticación
-        const authHeader = request.headers.get('authorization');
+        const auth = await getAuthFromRequest(request);
 
-        // Por ahora retornar array vacío si no hay empresas
-        // TODO: Implementar auth correctamente
-        const companies: unknown[] = [];
+        if (!auth) {
+            return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        }
+
+        // Buscar empresas vinculadas al usuario
+        const companies = await prisma.company.findMany({
+            where: {
+                users: {
+                    some: { id: auth.userId }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
 
         return NextResponse.json({ companies });
-    } catch (error) {
-        console.error('Error:', error);
-        return NextResponse.json({ error: 'Error al obtener empresas' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Error in GET /api/companies:', error);
+        return NextResponse.json(
+            { error: 'Error al obtener empresas', details: error.message },
+            { status: 500 }
+        );
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
+        const auth = await getAuthFromRequest(request);
+
+        if (!auth) {
+            return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { legalForm, name, nit, nrc, address, economicActivity, shareCapital, municipality, department, country } = body;
+
+        // Validación de campos obligatorios
+        if (!name || !nit || !nrc || !legalForm || !economicActivity || !address || !department || !municipality) {
+            return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
+        }
 
         // Validación simple del NIT (acepta cualquier formato con 13+ dígitos)
         const nitClean = nit.replace(/[^0-9]/g, '');
@@ -31,8 +57,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'NIT debe tener al menos 13 dígitos' }, { status: 400 });
         }
 
-        // Por simplicidad, crear sin autenticación estricta
-        // En producción DEBES implementar auth
         const encryptedTaxId = encrypt(nit);
 
         const company = await prisma.company.create({
@@ -42,6 +66,10 @@ export async function POST(request: NextRequest) {
                 country: country || 'SV',
                 metadata: {
                     legalForm, nrc, address, economicActivity, shareCapital, municipality, department, nit
+                },
+                // Conectar con el usuario que la crea
+                users: {
+                    connect: { id: auth.userId }
                 }
             }
         });
@@ -59,8 +87,20 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ company }, { status: 201 });
-    } catch (error) {
-        console.error('Error:', error);
-        return NextResponse.json({ error: 'Error al crear empresa' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Error in POST /api/companies:', error);
+
+        // Manejar error de duplicado (P2002 es el código de Prisma para Unique Constraint)
+        if (error.code === 'P2002') {
+            return NextResponse.json(
+                { error: 'Ya existe una empresa registrada con este NIT' },
+                { status: 409 }
+            );
+        }
+
+        return NextResponse.json(
+            { error: 'Error interno al crear empresa', details: error.message },
+            { status: 500 }
+        );
     }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthFromRequest } from '@/lib/auth/jwt';
+import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
 
 export async function GET(request: NextRequest) {
     try {
@@ -13,13 +13,9 @@ export async function GET(request: NextRequest) {
         const month = parseInt(searchParams.get('month') || String(new Date().getMonth() + 1));
         const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()));
 
-        // Get user's company
-        const userRecord = await prisma.user.findUnique({
-            where: { id: auth.userId },
-            include: { companies: true },
-        });
+        const companyId = await getCompanyIdFromRequest(request, auth.userId);
 
-        if (!userRecord || userRecord.companies.length === 0) {
+        if (!companyId) {
             return NextResponse.json({
                 totalIngresos: 0,
                 totalEgresos: 0,
@@ -29,8 +25,6 @@ export async function GET(request: NextRequest) {
                 byCategory: [],
             });
         }
-
-        const companyId = userRecord.companies[0].id;
 
         // Calculate date range
         const startDate = new Date(year, month - 1, 1);
@@ -75,7 +69,7 @@ export async function GET(request: NextRequest) {
             .map(([name, amount]) => ({
                 name,
                 amount,
-                percentage: (amount / (totalIngresos + totalEgresos)) * 100,
+                percentage: (amount / (totalIngresos + totalEgresos || 1)) * 100, // Avoid division by zero
             }))
             .sort((a, b) => b.amount - a.amount);
 
@@ -87,10 +81,10 @@ export async function GET(request: NextRequest) {
             transactionCount: transactions.length,
             byCategory,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error generating report:', error);
         return NextResponse.json(
-            { error: 'Error al generar reporte' },
+            { error: 'Error al generar reporte financiero', details: error.message },
             { status: 500 }
         );
     }

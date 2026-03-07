@@ -11,6 +11,13 @@ export interface AccountingTransactionInput {
     country?: string;
 }
 
+export interface LedgerRule {
+    debit: string;
+    credit: string;
+    tax?: number;
+    aml_limit?: number;
+}
+
 /**
  * Servicio de Contabilidad Invisible
  * Automatiza la creación de partidas dobles basadas en reglas de negocio.
@@ -33,7 +40,7 @@ export class LedgerService {
         }
 
         // 2. Buscar Regla en el Motor de Reglas
-        const rule = await (prisma as any).countryRule.findFirst({
+        const rule = await prisma.countryRule.findFirst({
             where: {
                 country,
                 triggerText: {
@@ -44,16 +51,18 @@ export class LedgerService {
         });
 
         if (!rule) {
-            throw new Error(`No se encontró una regla contable para la categoría: ${category}`);
+            // No lanzamos error para no bloquear la transacción principal, solo advertimos
+            console.warn(`[Ledger] No se encontró una regla contable para la categoría: ${category}`);
+            return null;
         }
 
-        const rulesJson = rule.rules as any;
+        const rulesJson = (rule.rules as unknown) as LedgerRule;
         const taxRate = rulesJson.tax || 0;
         const iva = amount * taxRate;
         const subtotal = amount - iva;
 
         // 3. Generar el Asiento Contable (Journal Entry)
-        const entry = await (prisma as any).journalEntry.create({
+        const entry = await prisma.journalEntry.create({
             data: {
                 companyId,
                 description,
@@ -68,18 +77,18 @@ export class LedgerService {
                     create: [
                         {
                             accountId: await this.getAccountIdByCode(companyId, rulesJson.debit),
-                            debit: subtotal,
+                            debit: parseFloat(subtotal.toFixed(2)),
                             credit: 0,
                         },
                         {
                             accountId: await this.getAccountIdByCode(companyId, '110601'), // IVA Crédito Fiscal por defecto
-                            debit: iva,
+                            debit: parseFloat(iva.toFixed(2)),
                             credit: 0,
                         },
                         {
                             accountId: await this.getAccountIdByCode(companyId, rulesJson.credit),
                             debit: 0,
-                            credit: amount,
+                            credit: parseFloat(amount.toFixed(2)),
                         },
                     ],
                 },
@@ -96,7 +105,7 @@ export class LedgerService {
      * Obtiene o crea una cuenta contable por código para una empresa.
      */
     private static async getAccountIdByCode(companyId: string, code: string) {
-        let account = await (prisma as any).account.findUnique({
+        let account = await prisma.account.findUnique({
             where: {
                 companyId_code: { companyId, code },
             },
@@ -104,7 +113,7 @@ export class LedgerService {
 
         if (!account) {
             // Si la cuenta no existe, la creamos (Modo "Auto-setup" para este MVP)
-            account = await (prisma as any).account.create({
+            account = await prisma.account.create({
                 data: {
                     companyId,
                     code,
@@ -121,10 +130,17 @@ export class LedgerService {
         const map: Record<string, string> = {
             '1101': 'Caja / Efectivo',
             '1106': 'IVA Crédito Fiscal',
-            '5102': 'Gastos de Operación - Combustibles',
+            '5102': 'Gastos de Operación',
             '4101': 'Ventas de Bienes y Servicios',
+            '1102': 'Bancos / Cuentas Corrientes',
+            '2101': 'Proveedores locales',
+            '5103': 'Gastos Administrativos',
+            '5104': 'Gastos de Venta',
+            '1103': 'Cuentas por Cobrar Clientes',
         };
-        return map[code.substring(0, 4)] || `Cuenta ${code}`;
+
+        // Intenta match exacto primero, luego por los primeros 4 dígitos
+        return map[code] || map[code.substring(0, 4)] || `Cuenta ${code}`;
     }
 
     private static getAccountType(code: string): string {

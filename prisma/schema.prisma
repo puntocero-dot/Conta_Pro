@@ -31,7 +31,25 @@ model Company {
   categories     Category[]
   journalEntries JournalEntry[]
   transactions   Transaction[]
+  clients        AccountClient[]
   users          User[]         @relation("CompanyToUser")
+}
+
+model AccountClient {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  nit       String?
+  dui       String?
+  address   String?
+  type      String   @default("INDIVIDUAL") // INDIVIDUAL o EMPRESA
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
 }
 
 model Category {

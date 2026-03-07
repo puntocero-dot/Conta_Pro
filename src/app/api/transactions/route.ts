@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthFromRequest } from '@/lib/auth/jwt';
+import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
 import { LedgerService } from '@/lib/accounting/ledger';
 
 export async function GET(request: NextRequest) {
@@ -10,17 +10,14 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
-        // Get user's company
-        const userRecord = await prisma.user.findUnique({
-            where: { id: auth.userId },
-            include: { companies: true },
-        });
+        const companyId = await getCompanyIdFromRequest(request, auth.userId);
 
-        if (!userRecord || userRecord.companies.length === 0) {
-            return NextResponse.json({ transactions: [] });
+        if (!companyId) {
+            return NextResponse.json(
+                { error: 'No se encontró una empresa asociada' },
+                { status: 400 }
+            );
         }
-
-        const companyId = userRecord.companies[0].id;
 
         const transactions = await prisma.transaction.findMany({
             where: { companyId },
@@ -32,10 +29,10 @@ export async function GET(request: NextRequest) {
         });
 
         return NextResponse.json({ transactions });
-    } catch (error) {
-        console.error('Error fetching transactions:', error);
+    } catch (error: any) {
+        console.error('Error in GET /api/transactions:', error);
         return NextResponse.json(
-            { error: 'Error al obtener transacciones' },
+            { error: 'Error al obtener transacciones', details: error.message },
             { status: 500 }
         );
     }
@@ -51,30 +48,23 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { type, amount, description, date, categoryId } = body;
 
-        // Validations
         if (!type || !amount || !description || !date) {
             return NextResponse.json(
-                { error: 'Datos incompletos' },
+                { error: 'Datos incompletos requeridos (tipo, monto, descripción, fecha)' },
                 { status: 400 }
             );
         }
 
-        // Get user's company
-        const userRecord = await prisma.user.findUnique({
-            where: { id: auth.userId },
-            include: { companies: true },
-        });
+        const companyId = await getCompanyIdFromRequest(request, auth.userId);
 
-        if (!userRecord || userRecord.companies.length === 0) {
+        if (!companyId) {
             return NextResponse.json(
-                { error: 'Usuario sin empresa asignada' },
+                { error: 'El usuario debe tener una empresa vinculada para registrar transacciones' },
                 { status: 400 }
             );
         }
 
-        const companyId = userRecord.companies[0].id;
-
-        // Get or create default category
+        // Validar u obtener categoría por defecto
         let finalCategoryId = categoryId;
         if (!categoryId) {
             const defaultCategory = await prisma.category.upsert({
@@ -94,11 +84,11 @@ export async function POST(request: NextRequest) {
             finalCategoryId = defaultCategory.id;
         }
 
-        // Create transaction
+        // Crear la transacción
         const transaction = await prisma.transaction.create({
             data: {
                 type,
-                amount,
+                amount: parseFloat(amount.toString()),
                 description,
                 date: new Date(date),
                 categoryId: finalCategoryId,
@@ -110,25 +100,26 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Create Ledger Entry (Invisible Accounting)
+        // Procesar en el Ledger (Contabilidad Invisible)
         try {
             await LedgerService.processTransaction({
                 companyId,
-                amount,
+                amount: transaction.amount,
                 category: transaction.category.name,
                 description,
                 reference: transaction.id,
                 date: transaction.date,
             });
-        } catch (ledgerError) {
-            console.warn('⚠️ No se pudo generar el asiento contable:', ledgerError);
+        } catch (ledgerError: any) {
+            console.warn('⚠️ Ledger Warning:', ledgerError.message);
+            // No bloqueamos la respuesta si falla la contabilidad automática
         }
 
         return NextResponse.json({ transaction }, { status: 201 });
-    } catch (error) {
-        console.error('Error creating transaction:', error);
+    } catch (error: any) {
+        console.error('Error in POST /api/transactions:', error);
         return NextResponse.json(
-            { error: 'Error al crear transacción' },
+            { error: 'Error al crear transacción', details: error.message },
             { status: 500 }
         );
     }
