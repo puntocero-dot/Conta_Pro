@@ -1,0 +1,122 @@
+.container {
+    min-height: 100vh;
+    background: var(--background);
+    padding: 2.5rem;
+}
+
+.header {
+    margin-bottom: 3.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.header h1 {
+    font-size: 2.75rem;
+    font-weight: 800;
+    color: var(--foreground);
+    margin: 0;
+    letter-spacing: -1.5px;
+}
+
+.header p {
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 2.5rem;
+    margin-bottom: 4rem;
+}
+
+.card {
+    background: white;
+    border-radius: 2rem;
+    padding: 3rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 30px 60px -12px rgba(0, 35, 102, 0.12);
+    border-color: var(--primary);
+}
+
+.card h2 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--foreground);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.icon {
+    color: var(--primary);
+    font-size: 1.8rem;
+}
+
+.logList {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.logEntry {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 1.25rem;
+    border-left: 5px solid var(--primary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.logMeta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.logAction {
+    font-weight: 800;
+    color: var(--foreground);
+    font-size: 1.05rem;
+}
+
+.logDetails {
+    font-size: 0.95rem;
+    color: #64748b;
+    font-style: italic;
+}
+
+.statusIndicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    background: #ecfdf5;
+    color: #059669;
+}
+
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card {
+        padding: 2rem;
+    }
+}

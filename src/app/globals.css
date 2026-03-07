@@ -1,37 +1,50 @@
 :root {
-  /* Brand Colors */
-  --primary: #2563eb;
+  /* Brand Colors - Armados2Go Palette */
+  --primary: #0077b6;
+  --primary-hover: #0096c7;
   --primary-foreground: #ffffff;
-  --secondary: #64748b;
-  --secondary-foreground: #ffffff;
-  --accent: #f59e0b;
-  --accent-foreground: #ffffff;
+  
+  --secondary: #48cae4;
+  --secondary-foreground: #03045e;
+  
+  --accent: #caf0f8;
+  --accent-foreground: #023e8a;
 
-  /* Backgrounds */
-  --background: #ffffff;
-  --foreground: #0f172a;
+  /* Neutrals */
+  --background: #f8fafc;
+  --foreground: #03045e;
+  
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #03045e;
+  
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #03045e;
+
+  /* Sidebar Specific (Deep Navy) */
+  --sidebar-bg: #001233;
+  --sidebar-fg: #fafaff;
+  --sidebar-hover: #002855;
+  --sidebar-active: #0466c8;
 
   /* Status Colors */
-  --success: #10b981;
-  --success-foreground: #ffffff;
-  --warning: #f59e0b;
-  --warning-foreground: #ffffff;
-  --error: #ef4444;
-  --error-foreground: #ffffff;
-  --info: #3b82f6;
-  --info-foreground: #ffffff;
+  --success: #06d6a0;
+  --warning: #ffd166;
+  --error: #ef476f;
+  --info: #118ab2;
 
   /* Border & Input */
   --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
+  --input: #f1f5f9;
+  --ring: #0077b6;
+
+  /* Shadows & Effects */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --glass: rgba(255, 255, 255, 0.7);
 
   /* Radius */
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 }
 
 [data-theme='dark'] {
