@@ -22,19 +22,8 @@ async function main() {
         await prisma.category.deleteMany({});
         console.log('Borrado Category');
 
-        // El orden de Client/Company/Account es crítico
-        await prisma.client.deleteMany({});
-        console.log('Borrado Client');
-
         await prisma.account.deleteMany({});
         console.log('Borrado Account');
-
-        // Limpiar relación implícita si es necesario (Prisma suele manejarlo)
-        // Pero por si acaso:
-        await (prisma as any).company.updateMany({
-            data: {},
-            where: {},
-        });
 
         await prisma.company.deleteMany({});
         console.log('Borrado Company');
@@ -43,7 +32,6 @@ async function main() {
 
     } catch (error) {
         console.error('❌ Error durante la limpieza:', error);
-        // No salimos con error para permitir que el flujo continúe si algunas ya están vacías
     } finally {
         await prisma.$disconnect();
     }
