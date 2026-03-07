@@ -21,8 +21,9 @@ export async function POST(request: Request) {
         });
 
         if (!user) {
+            console.log(`[AUTH DEBUG] Login fallido: Usuario no encontrado (${email})`);
             return NextResponse.json(
-                { error: 'Credenciales inválidas' },
+                { error: 'Credenciales inválidas - Usuario no encontrado' },
                 { status: 401 }
             );
         }
@@ -30,8 +31,9 @@ export async function POST(request: Request) {
         // Verificar password
         const isValid = await bcrypt.compare(password, user.passwordHash);
         if (!isValid) {
+            console.log(`[AUTH DEBUG] Login fallido: Password incorrecto para ${email}`);
             return NextResponse.json(
-                { error: 'Credenciales inválidas' },
+                { error: 'Credenciales inválidas - Contraseña incorrecta' },
                 { status: 401 }
             );
         }

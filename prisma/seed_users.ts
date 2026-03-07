@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('🌱 Seeding test users...');
 
-    const password = 'Admin123456!';
-    const passwordHash = await bcrypt.hash(password, 12);
+    const password = 'admin123';
+    const passwordHash = await bcrypt.hash(password, 10);
 
     // Usuario SUPER_ADMIN para pruebas
     const admin = await prisma.user.upsert({

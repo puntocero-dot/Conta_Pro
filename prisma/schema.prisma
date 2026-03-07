@@ -8,58 +8,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  CONTADOR
-  CLIENTE
-  AUDITOR
-}
-
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String     @id @default(uuid())
+  email        String     @unique
   passwordHash String
-  role         Role     @default(CLIENTE)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  companies Company[]
-  auditLogs AuditLog[]
+  role         Role       @default(CLIENTE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+  companies    Company[]  @relation("CompanyToUser")
 }
 
 model Company {
-  id        String   @id @default(uuid())
-  name      String
-  taxId     String   @unique // Encrypted
-  country   String
-  metadata  Json? // Legal form, NRC, address, etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  users          User[]
-  transactions   Transaction[]
-  categories     Category[]
+  id             String         @id @default(uuid())
+  name           String
+  taxId          String         @unique
+  country        String
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   accounts       Account[]
+  categories     Category[]
   journalEntries JournalEntry[]
-}
-
-enum TransactionType {
-  INGRESO
-  EGRESO
+  transactions   Transaction[]
+  users          User[]         @relation("CompanyToUser")
 }
 
 model Category {
-  id        String          @id @default(uuid())
-  name      String
-  type      TransactionType
-  color     String          @default("#3b82f6")
-  icon      String          @default("📁")
-  companyId String
-  createdAt DateTime        @default(now())
-
-  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id           String          @id @default(uuid())
+  name         String
+  type         TransactionType
+  color        String          @default("#3b82f6")
+  icon         String          @default("📁")
+  companyId    String
+  createdAt    DateTime        @default(now())
+  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 }
 
@@ -72,13 +55,12 @@ model Transaction {
   categoryId  String
   companyId   String
   userId      String
-  attachments Json? // URLs de archivos adjuntos
-  metadata    Json? // Tax info, etc
+  attachments Json?
+  metadata    Json?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-
-  category Category @relation(fields: [categoryId], references: [id])
-  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category    Category        @relation(fields: [categoryId], references: [id])
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([userId])
@@ -99,51 +81,47 @@ model AuditLog {
   newData     Json?
   result      String
   metadata    Json?
-
-  user User? @relation(fields: [userId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
 }
 
 model Account {
-  id        String   @id @default(uuid())
-  code      String // Código catálogo (ej: 1101)
-  name      String // Nombre (ej: Efectivo)
-  type      String // Activo, Pasivo, Patrimonio, Ingreso, Gasto
+  id        String             @id @default(uuid())
+  code      String
+  name      String
+  type      String
   companyId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  lines   JournalEntryLine[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines     JournalEntryLine[]
 
   @@unique([companyId, code])
 }
 
 model JournalEntry {
-  id          String   @id @default(uuid())
-  date        DateTime @default(now())
+  id          String             @id @default(uuid())
+  date        DateTime           @default(now())
   description String
-  reference   String? // Relación con transacción original o factura
+  reference   String?
   companyId   String
-  metadata    Json? // Datos del Motor de Reglas
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  lines   JournalEntryLine[]
+  metadata    Json?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines       JournalEntryLine[]
 
   @@index([companyId])
   @@index([date])
 }
 
 model JournalEntryLine {
-  id             String @id @default(uuid())
+  id             String       @id @default(uuid())
   journalEntryId String
   accountId      String
-  debit          Float  @default(0)
-  credit         Float  @default(0)
-
-  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  account      Account      @relation(fields: [accountId], references: [id])
+  debit          Float        @default(0)
+  credit         Float        @default(0)
+  account        Account      @relation(fields: [accountId], references: [id])
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
 
   @@index([journalEntryId])
   @@index([accountId])
@@ -151,11 +129,23 @@ model JournalEntryLine {
 
 model CountryRule {
   id          String   @id @default(uuid())
-  country     String // ISO (SV, GT...)
-  triggerText String // Texto que activa la regla (ej: "Gasolina")
-  rules       Json // { debit: "5102", credit: "1101", tax: 0.13, aml_limit: 10000 }
+  country     String
+  triggerText String
+  rules       Json
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([country, triggerText])
+}
+
+enum Role {
+  SUPER_ADMIN
+  CONTADOR
+  CLIENTE
+  AUDITOR
+}
+
+enum TransactionType {
+  INGRESO
+  EGRESO
 }
