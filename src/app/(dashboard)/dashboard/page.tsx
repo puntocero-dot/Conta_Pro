@@ -27,36 +27,7 @@ export default function DashboardPage() {
     if (!user) return null;
 
     return (
-        <div className={styles.container}>
-            <header className={styles.header}>
-                <div className={styles.brand}>
-                    <h1>Conta<span className={styles.highlight}>2</span>Go</h1>
-                </div>
-                <nav className={styles.nav}>
-                    <button onClick={() => router.push('/dashboard')} className={styles.navBtn}>
-                        🏠 Inicio
-                    </button>
-                    <button onClick={() => router.push('/transactions')} className={styles.navBtn}>
-                        💰 Transacciones
-                    </button>
-                    <button onClick={() => router.push('/reports')} className={styles.navBtn}>
-                        📊 Reportes
-                    </button>
-                    {role === 'SUPER_ADMIN' && (
-                        <button onClick={() => router.push('/security-dashboard')} className={styles.navBtn}>
-                            🔐 Seguridad
-                        </button>
-                    )}
-                </nav>
-                <div className={styles.user}>
-                    <div className={styles.userInfo}>
-                        <p className={styles.email}>{user.email}</p>
-                        <span className={styles.badge}>{role || 'CLIENTE'}</span>
-                    </div>
-                    <button onClick={logout} className={styles.logoutBtn}>Cerrar Sesión</button>
-                </div>
-            </header>
-
+        <div className="animate-fade-in">
             <main className={styles.main}>
                 <div className={styles.welcome}>
                     <h2>¡Bienvenido! 👋</h2>
