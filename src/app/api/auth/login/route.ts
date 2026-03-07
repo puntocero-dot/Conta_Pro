@@ -56,10 +56,18 @@ export async function POST(request: Request) {
         response.cookies.set(AUTH_COOKIE_NAME, token, AUTH_COOKIE_OPTIONS);
 
         return response;
-    } catch (error) {
-        console.error('Login error:', error);
+    } catch (error: any) {
+        console.error('Login error detail:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code
+        });
         return NextResponse.json(
-            { error: 'Error interno del servidor' },
+            {
+                error: 'Error interno del servidor',
+                debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
+                detail: error.message // Temporarily expose for live debugging
+            },
             { status: 500 }
         );
     }
