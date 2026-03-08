@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ clients: [] });
         }
 
-        const clients = await (prisma as any).accountClient.findMany({
+        const clients = await prisma.accountClient.findMany({
             where: { companyId },
             orderBy: { name: 'asc' }
         });
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const client = await (prisma as any).accountClient.create({
+        const client = await prisma.accountClient.create({
             data: {
                 name,
                 email,

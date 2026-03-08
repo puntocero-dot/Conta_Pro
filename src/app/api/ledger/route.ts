@@ -15,11 +15,15 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ entries: [] });
         }
 
-        // Obtener entradas de diario (Ledger)
-        const entries = await (prisma as any).ledgerEntry.findMany({
+        // Obtener entradas de diario (JournalEntry)
+        const entries = await prisma.journalEntry.findMany({
             where: { companyId },
             include: {
-                account: true,
+                lines: {
+                    include: {
+                        account: true
+                    }
+                }
             },
             orderBy: { createdAt: 'desc' },
             take: 50,
