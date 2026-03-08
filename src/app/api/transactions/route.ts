@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { type, amount, description, date, categoryId } = body;
+        const { type, amount, description, date, categoryId, clientId } = body;
 
         if (!type || !amount || !description || !date) {
             return NextResponse.json(
@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
                 categoryId: finalCategoryId,
                 companyId,
                 userId: auth.userId,
+                metadata: clientId ? { clientId } : undefined,
             },
             include: {
                 category: true,

@@ -231,8 +231,27 @@ function NewTransactionModal({
         description: '',
         date: new Date().toISOString().split('T')[0],
         categoryId: '',
+        clientId: '',
     });
+    const [clients, setClients] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchClients = async () => {
+            try {
+                const response = await fetch('/api/clients', {
+                    headers: { 'x-company-id': companyId }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setClients(data.clients || []);
+                }
+            } catch (error) {
+                console.error('Error fetching clients:', error);
+            }
+        };
+        fetchClients();
+    }, [companyId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -304,6 +323,20 @@ function NewTransactionModal({
                             onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                             placeholder="0.00"
                         />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="label">Cliente / Entidad (Opcional)</label>
+                        <select
+                            className="input"
+                            value={formData.clientId}
+                            onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+                        >
+                            <option value="">Seleccionar entidad...</option>
+                            {clients.map(client => (
+                                <option key={client.id} value={client.id}>{client.name}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="form-group">

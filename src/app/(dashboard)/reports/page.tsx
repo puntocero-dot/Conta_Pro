@@ -11,6 +11,10 @@ interface ReportData {
     totalEgresos: number;
     balance: number;
     iva: number;
+    ivaDebito: number;
+    ivaCredito: number;
+    pagoACuenta: number;
+    rentaEstimada: number;
     transactionCount: number;
     byCategory: Array<{
         name: string;
@@ -157,8 +161,29 @@ export default function ReportsPage() {
                                 <div className={`${styles.summaryCard} ${styles.tax}`}>
                                     <div className={styles.cardIcon}>🏛️</div>
                                     <div className={styles.cardContent}>
-                                        <p>IVA 13%</p>
+                                        <p>IVA Neto (13%)</p>
                                         <h2>${reportData.iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <small style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                                            Débito: ${reportData.ivaDebito.toFixed(2)} | Crédito: ${reportData.ivaCredito.toFixed(2)}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div className={`${styles.summaryCard} ${styles.tax}`}>
+                                    <div className={styles.cardIcon}>🏧</div>
+                                    <div className={styles.cardContent}>
+                                        <p>Pago a Cuenta (1.75%)</p>
+                                        <h2>${reportData.pagoACuenta.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <small style={{ fontSize: '0.7rem' }}>Obligación mensual SV</small>
+                                    </div>
+                                </div>
+
+                                <div className={`${styles.summaryCard} ${styles.balance}`}>
+                                    <div className={styles.cardIcon}>📝</div>
+                                    <div className={styles.cardContent}>
+                                        <p>Est. Renta Anual</p>
+                                        <h2>${reportData.rentaEstimada.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <small style={{ fontSize: '0.7rem' }}>Proyección sobre utilidad</small>
                                     </div>
                                 </div>
                             </div>

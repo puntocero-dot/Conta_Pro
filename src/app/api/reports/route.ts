@@ -55,8 +55,20 @@ export async function GET(request: NextRequest) {
 
         const balance = totalIngresos - totalEgresos;
 
-        // IVA = 13% of ingresos (El Salvador rate)
-        const iva = totalIngresos * 0.13;
+        // --- CÁLCULOS FISCALES SV ---
+        // IVA Débito (Ventas)
+        const ivaDebito = totalIngresos * 0.13;
+        // IVA Crédito (Compras/Gastos) - Estimado sobre el total de egresos
+        const ivaCredito = totalEgresos * 0.13;
+        // IVA a Pagar (Si es positivo)
+        const ivaNeto = Math.max(0, ivaDebito - ivaCredito);
+
+        // Pago a Cuenta (1.75% de Ingresos Brutos en SV)
+        const pagoACuenta = totalIngresos * 0.0175;
+
+        // Estimación de Renta (25% o 30% sobre utilidad - simplificado al 25% para este MVP)
+        const utilidadNeta = Math.max(0, totalIngresos - totalEgresos);
+        const rentaEstimada = utilidadNeta * 0.25;
 
         // Group by category
         const categoryMap = new Map<string, number>();
@@ -69,7 +81,7 @@ export async function GET(request: NextRequest) {
             .map(([name, amount]) => ({
                 name,
                 amount,
-                percentage: (amount / (totalIngresos + totalEgresos || 1)) * 100, // Avoid division by zero
+                percentage: (amount / (totalIngresos + totalEgresos || 1)) * 100,
             }))
             .sort((a, b) => b.amount - a.amount);
 
@@ -77,7 +89,11 @@ export async function GET(request: NextRequest) {
             totalIngresos,
             totalEgresos,
             balance,
-            iva,
+            iva: ivaNeto,
+            ivaDebito,
+            ivaCredito,
+            pagoACuenta,
+            rentaEstimada,
             transactionCount: transactions.length,
             byCategory,
         });

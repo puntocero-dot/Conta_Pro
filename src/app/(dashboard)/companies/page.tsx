@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './companies.module.css';
 
 interface Company {
@@ -20,9 +21,15 @@ interface Company {
 export default function CompaniesPage() {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
+    const { setActiveCompanyId } = useCompany();
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
+
+    const handleSelectCompany = (id: string) => {
+        setActiveCompanyId(id);
+        router.push('/dashboard');
+    };
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -107,7 +114,10 @@ export default function CompaniesPage() {
                                 )}
                             </div>
 
-                            <button className={styles.selectBtn}>
+                            <button
+                                onClick={() => handleSelectCompany(company.id)}
+                                className={styles.selectBtn}
+                            >
                                 Gestionar Entidad
                             </button>
                         </div>

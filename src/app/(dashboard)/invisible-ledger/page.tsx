@@ -99,7 +99,9 @@ export default function HumanFriendlyLedger() {
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
                         Bienestar Financiero
                     </h1>
-                    <p className="text-slate-400">Tu contabilidad sucede en silencio por detrás.</p>
+                    <p className="text-slate-400">
+                        Tu contabilidad sucede en silencio. El <strong>Ledger Invisible</strong> registra automáticamente cada transacción en libros contables de partida doble, preparándote para auditorías y declaraciones sin esfuerzo manual.
+                    </p>
                 </div>
                 <div className="flex gap-2">
                     <Badge variant="outline" className="py-1 px-3 border-emerald-500/30 text-emerald-400">

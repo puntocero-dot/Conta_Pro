@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const menuItems = [
         { path: '/dashboard', icon: '🏠', label: 'Dashboard', roles: ['all'] },
-        { path: '/invisible-ledger', icon: '✨', label: 'Bienestar', roles: ['all'] },
+        { path: '/invisible-ledger', icon: '✨', label: 'Bienestar Financiero', roles: ['all'] },
         { path: '/companies', icon: '🏢', label: 'Empresas', roles: ['all'] },
         { path: '/clients', icon: '👥', label: 'Clientes', roles: ['all'] },
         { path: '/transactions', icon: '💰', label: 'Transacciones', roles: ['all'] },

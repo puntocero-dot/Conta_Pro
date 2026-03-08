@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
-import { encrypt } from '@/lib/encryption/crypto';
+import { encrypt, decrypt } from '@/lib/encryption/crypto';
 import { TransactionType } from '@prisma/client';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
 
@@ -25,7 +25,20 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        return NextResponse.json({ companies });
+        // Desencriptar taxId (NIT) para mostrarlo en la UI
+        const decryptedCompanies = companies.map(company => {
+            try {
+                return {
+                    ...company,
+                    taxId: decrypt(company.taxId)
+                };
+            } catch (e) {
+                console.error(`Error decrypting taxId for company ${company.id}:`, e);
+                return company; // Fallback al valor encriptado si falla
+            }
+        });
+
+        return NextResponse.json({ companies: decryptedCompanies });
     } catch (error: any) {
         console.error('Error in GET /api/companies:', error);
         return NextResponse.json(
