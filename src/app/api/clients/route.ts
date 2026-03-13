@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ clients: [] });
         }
 
-        const clients = await prisma.accountClient.findMany({
+        if (!(prisma as any).accountClient) {
+            console.error('Prisma model "accountClient" is not available in the current client');
+            return NextResponse.json({ clients: [] });
+        }
+
+        const clients = await (prisma as any).accountClient.findMany({
             where: { companyId },
             orderBy: { name: 'asc' }
         });
@@ -56,7 +61,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const client = await prisma.accountClient.create({
+        if (!(prisma as any).accountClient) {
+            return NextResponse.json(
+                { error: 'El sistema de clientes no está listo. Sincroniza la base de datos.' },
+                { status: 503 }
+            );
+        }
+
+        const client = await (prisma as any).accountClient.create({
             data: {
                 name,
                 email,

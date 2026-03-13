@@ -16,7 +16,12 @@ export async function GET(request: NextRequest) {
         }
 
         // Obtener entradas de diario (JournalEntry)
-        const entries = await prisma.journalEntry.findMany({
+        if (!(prisma as any).journalEntry) {
+            console.error('Prisma model "journalEntry" is not available in the current client');
+            return NextResponse.json({ entries: [] });
+        }
+
+        const entries = await (prisma as any).journalEntry.findMany({
             where: { companyId },
             include: {
                 lines: {

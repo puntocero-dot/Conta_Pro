@@ -26,6 +26,11 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [activeCompanyId, setActiveCompanyIdState] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasHydrated, setHasHydrated] = useState(false);
+
+    useEffect(() => {
+        setHasHydrated(true);
+    }, []);
 
     const fetchCompanies = useCallback(async () => {
         if (!user) return;
@@ -69,6 +74,10 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     };
 
     const activeCompany = companies.find(c => c.id === activeCompanyId) || null;
+
+    if (!hasHydrated) {
+        return null;
+    }
 
     return (
         <CompanyContext.Provider value={{
