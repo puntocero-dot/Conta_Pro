@@ -21,7 +21,7 @@
 ### 🔐 Seguridad (6 Sprints Completados)
 
 #### Sprint 1: Autenticación
-- ✅ Login/Registro con Supabase
+- ✅ Login/Registro con JWT
 - ✅ MFA con TOTP
 - ✅ Backup codes
 - ✅ Rate limiting (5 intentos/15 min)
@@ -47,7 +47,7 @@
 - ✅ Pentest checklist (200+ checks)
 
 #### Sprint 5: Multi-País
-- ✅ RLS Policies en Supabase
+- ✅ Aislamiento de datos por empresa
 - ✅ 6 países (SV, GT, HN, NI, CR, PA)
 - ✅ Validación de Tax ID por país
 - ✅ Cálculo automático de IVA
@@ -144,7 +144,7 @@ Conta_2go/
 │   │       ├── audit/             ← API audit logs
 │   │       └── mfa/               ← API MFA
 │   ├── lib/
-│   │   ├── supabase/              ← Supabase client
+│   │   ├── auth/                  ← JWT Auth logic
 │   │   ├── prisma.ts              ← Prisma client
 │   │   ├── encryption/            ← Crypto utilities
 │   │   ├── validation/            ← Validators
@@ -184,11 +184,11 @@ Conta_2go/
 
 ### Backend
 - **Next.js API Routes**
-- **Supabase** (PostgreSQL + Auth)
+- **Railway** (PostgreSQL)
 - **Prisma ORM**
 
 ### Seguridad
-- **Supabase Auth** (JWT)
+- **JWT Auth** (Custom)
 - **Row Level Security** (RLS)
 - **AES-256-GCM** Encryption
 - **DOMPurify** (XSS prevention)
@@ -230,8 +230,6 @@ AuditLog          ← Logs de auditoría
 ### Desarrollo (`.env.local`)
 ```bash
 DATABASE_URL="postgresql://..."
-NEXT_PUBLIC_SUPABASE_URL="https://..."
-NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
 ENCRYPTION_MASTER_KEY="..."
 NEXT_PUBLIC_DEFAULT_COUNTRY="SV"
 ```
@@ -372,7 +370,8 @@ vercel                   # Deploy a Vercel
 ## 🎓 LO QUE APRENDISTE
 
 - ✅ Next.js 15 App Router
-- ✅ Supabase (Auth + DB)
+- ✅ Railway (PostgreSQL)
+- ✅ Custom JWT Auth
 - ✅ Prisma ORM
 - ✅ Row Level Security (RLS)
 - ✅ Encriptación AES-256

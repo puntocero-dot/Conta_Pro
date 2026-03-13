@@ -18,8 +18,8 @@
 | Lenguaje | TypeScript | ^5 |
 | UI | React + CSS Modules | 19.2.0 |
 | ORM | Prisma | 5.22.0 |
-| Base de Datos | PostgreSQL (Supabase) | — |
-| Autenticación | Supabase Auth (JWT) | ^2.86.0 |
+| Base de Datos | PostgreSQL (Railway) | — |
+| Autenticación | JWT Auth (Custom) | — |
 | Encriptación | AES-256-GCM nativo Node.js | — |
 | Validación | Zod | ^4.1.13 |
 | Sanitización | DOMPurify | ^3.3.0 |
@@ -75,14 +75,13 @@ Conta_2go/
 │   │   ├── config/               ← Configuración multi-país
 │   │   ├── audit/                ← Servicio de auditoría
 │   │   ├── logging/              ← Logging seguro
-│   │   ├── supabase/             ← Cliente Supabase
 │   │   ├── security/             ← Módulo de seguridad
 │   │   └── prisma.ts             ← Singleton Prisma Client
-│   └── middleware.ts             ← Security headers (TODOs pendientes)
+│   └── middleware.ts             ← Security headers & Auth verification
 ├── prisma/
 │   ├── schema.prisma             ← 9 modelos de base de datos
 │   ├── seed_rules.ts             ← Seed de reglas contables SV
-│   ├── hardening_supabase.sql    ← SQL de hardening
+│   ├── seed_rules.ts             ← Seed de reglas contables SV
 │   └── migrations/               ← Migraciones de Prisma
 ├── scripts/
 │   ├── security-test.js          ← Tests de seguridad
@@ -91,8 +90,8 @@ Conta_2go/
 │   ├── test-db.ts                ← Test de conexión DB
 │   └── emergency/
 │       ├── full-backup.js        ← Backup completo
-│       ├── maintenance-mode.js   ← Modo mantenimiento
-│       └── revoke-all-sessions.js ← Revocar sesiones
+│       ├── full-backup.js        ← Backup completo
+│       └── maintenance-mode.js   ← Modo mantenimiento
 ├── .github/workflows/
 │   └── security.yml              ← Pipeline CI/CD (Snyk, SonarQube, OWASP ZAP)
 ├── vercel.json                   ← Config deploy + security headers
@@ -320,7 +319,7 @@ Solo 3 reglas iniciales para El Salvador:
 - **Sidebar profesional** con tema oscuro, collapsible
 - **Navegación filtrada por roles** vía `menuItems.roles`
 - **Avatar** con inicial del email + badge de rol
-- **Logout** vía `supabase.auth.signOut()`
+- **Logout** vía `/api/auth/logout`
 
 ### Páginas del Dashboard
 
@@ -338,7 +337,7 @@ Solo 3 reglas iniciales para El Salvador:
 
 | Ruta | Función |
 |---|---|
-| `/login` | Login con Supabase Auth |
+| `/login` | Login con Credenciales |
 | `/register` | Registro de nuevo usuario |
 | `/mfa-setup` | Configuración de MFA/TOTP |
 
@@ -353,7 +352,7 @@ Solo 3 reglas iniciales para El Salvador:
 | `/api/auth/check-rate-limit` | GET | No | Verificar rate limit por IP |
 | `/api/auth/record-failed-attempt` | POST | No | Registrar intento fallido de login |
 | `/api/auth/clear-rate-limit` | POST | Sí | Limpiar rate limit |
-| `/api/companies` | GET, POST | Sí (Supabase) | CRUD de empresas |
+| `/api/companies` | GET, POST | Sí (JWT) | CRUD de empresas |
 | `/api/clients` | GET, POST | Sí | CRUD de clientes |
 | `/api/transactions` | GET, POST | Sí | CRUD de transacciones + Ledger automático |
 | `/api/reports` | GET | Sí | Generar reportes financieros |
@@ -368,13 +367,13 @@ Solo 3 reglas iniciales para El Salvador:
 Todas las rutas protegidas siguen este patrón:
 
 ```typescript
-const { data: { user }, error: authError } = await supabase.auth.getUser();
-if (authError || !user) {
+const auth = await verifyToken(token);
+if (!auth) {
     return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 }
 ```
 
-> ⚠️ **NOTA CRÍTICA:** Se usa `supabase` client-side importado en rutas API del servidor. Esto es un problema de diseño — debería usar `createServerClient` de `@supabase/ssr` para rutas de servidor.
+> ✅ **ESTADO:** Se usa un sistema robusto de JWT con cookies `HttpOnly` y verificación en el servidor.
 
 ---
 
@@ -427,7 +426,7 @@ if (authError || !user) {
 | `maintenance-mode.js` | `scripts/emergency/` | Activar/desactivar modo mantenimiento |
 | `revoke-all-sessions.js` | `scripts/emergency/` | Revocar todas las sesiones activas |
 | `seed_rules.ts` | `prisma/` | Seed de reglas contables para SV |
-| `hardening_supabase.sql` | `prisma/` | SQL de hardening para Supabase |
+| `manual_migration.sql` | `scripts/` | SQL de migración para Railway |
 
 ### Comandos npm
 
@@ -460,10 +459,8 @@ npm run pre-deploy    # security-test + build
 
 ```
 DATABASE_URL=postgresql://...
-DIRECT_URL=postgresql://...          # Para migraciones Prisma
-NEXT_PUBLIC_SUPABASE_URL=https://...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-ENCRYPTION_MASTER_KEY=...            # Generada con scripts/generate-keys.js
+DIRECT_URL=postgresql://...
+ENCRYPTION_MASTER_KEY=...
 NEXT_PUBLIC_DEFAULT_COUNTRY=SV
 ```
 

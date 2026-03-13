@@ -73,8 +73,6 @@ Edita el archivo `src/app/globals.css` y modifica las variables CSS en la secci�
    ```env
    DATABASE_URL="postgresql://..."
    DIRECT_URL="postgresql://..."
-   NEXT_PUBLIC_SUPABASE_URL="https://..."
-   NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
    ENCRYPTION_MASTER_KEY="..."
    ```
 
@@ -94,10 +92,10 @@ Edita el archivo `src/app/globals.css` y modifica las variables CSS en la secci�
 ## 🔐 Características de Seguridad (6 Sprints)
 
 ### Sprint 1: Autenticación y Autorización ✅
-- ✅ Autenticación Multi-Factor (MFA) con Supabase
+- ✅ Autenticación Multi-Factor (MFA) personalizada
 - ✅ Control de acceso basado en roles (RBAC): SUPER_ADMIN, CONTADOR, CLIENTE, AUDITOR
 - ✅ Políticas de contraseñas robustas (12+ caracteres, validación HIBP)
-- ✅ Gestión de sesiones seguras con JWT
+- ✅ Gestión de sesiones seguras con JWT (HttpOnly Cookies)
 - ✅ Middleware de seguridad con headers HTTP estrictos
 
 ### Sprint 2: Encriptación ✅
@@ -126,7 +124,7 @@ Edita el archivo `src/app/globals.css` y modifica las variables CSS en la secci�
 - ✅ Pre-deploy validation scripts
 
 ### Sprint 5: Multi-País ✅
-- ✅ Row Level Security (RLS) policies completas en Supabase
+- ✅ Aislamiento de datos por empresa y usuario
 - ✅ Configuración segura por país (6 países: SV, GT, HN, NI, CR, PA)
 - ✅ Sistema de Tax ID validation por país
 - ✅ Formateo de moneda y fechas regionalizado
@@ -146,9 +144,9 @@ Edita el archivo `src/app/globals.css` y modifica las variables CSS en la secci�
 
 - **Framework**: Next.js 14+ (App Router)
 - **Lenguaje**: TypeScript
-- **Base de Datos**: PostgreSQL (Supabase)
+- **Base de Datos**: PostgreSQL (Railway)
 - **ORM**: Prisma
-- **Autenticación**: Supabase Auth
+- **Autenticación**: JWT Auth (Custom)
 - **Estilos**: Vanilla CSS (CSS Modules + Variables)
 - **Deployment**: Vercel
 
@@ -168,8 +166,7 @@ Conta_2go/
 │   │   ├── rbac.ts         # Definiciones de roles y permisos
 │   │   ├── password-policy.ts
 │   │   └── session-manager.ts
-│   ├── supabase/
-│   │   └── client.ts       # Cliente de Supabase
+│   │   ├── session-manager.ts
 │   └── prisma.ts           # Cliente de Prisma
 ├── hooks/
 │   └── useAuth.ts          # Hook de autenticación

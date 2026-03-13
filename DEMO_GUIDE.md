@@ -2,10 +2,11 @@
 
 ### ⚡ INICIO RÁPIDO
 
-1. **Iniciar servidor:**
-```bash
-npm run dev
-```
+1. **Revisar estado de servicios:**
+   - 1. Servidor (Vercel)
+   - 2. Base de Datos (Railway)
+   - 3. Servicios Externos (Tercero)
+   - Re-conectar APIs externas (Stripe, etc.)
 
 2. **Abrir:** http://localhost:3001
 
@@ -46,7 +47,12 @@ npm run dev
    - DUI: **01234567-8**
 4. Guardar
 
-**Mensaje clave:** *"CRM integrado para gestión de clientes y proveedores"*
+**Mensaje clave:**
+- OPCIÓN 1: "CRM integrado para gestión de clientes y proveedores"
+- OPCIÓN 2: "Todos los datos encriptados en la base de datos"
+- OPCIÓN 3: "Row Level Security (RLS) para proteger datos sensibles"
+- OPCIÓN 4: Revocar todos los tokens (Vía Base de Datos)
+- Ver manual de emergencia
 
 ### 📍 **Paso 4: Transacciones (1.5 min)**
 1. Click en **💰 Transacciones**
@@ -109,7 +115,8 @@ npm run dev
 
 ### 🚀 Tecnología
 - Next.js 15 + React 18
-- Supabase (PostgreSQL + Auth)
+- Railway (PostgreSQL)
+- Custom JWT Auth
 - Prisma ORM
 - TypeScript
 - CI/CD con GitHub Actions
@@ -214,7 +221,7 @@ vercel                   # Deploy a Vercel
 
 ## 📋 CHECKLIST PRE-DEMO
 
-- [ ] Servidor corriendo sin errores
+- [ ] Revisar configuraciones de seguridad de Railway
 - [ ] Base de datos con datos de prueba
 - [ ] Usuario demo creado
 - [ ] Empresa demo creada
@@ -231,6 +238,8 @@ vercel                   # Deploy a Vercel
 - **6 sprints de seguridad** completados
 - **200+ security checks** implementados
 - **6 países** soportados
+- **Proveedor Cloud (Vercel):** support@vercel.com
+- **Proveedor DB (Railway):** support@railway.app
 - **100% uptime** objetivo
 - **Encriptación** de grado militar
 - **Cumplimiento** GDPR/SOC2 ready
