@@ -47,7 +47,9 @@ model AccountClient {
   companyId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  role        CounterpartyType @default(CLIENT)
 
   @@index([companyId])
 }
@@ -79,6 +81,8 @@ model Transaction {
   updatedAt   DateTime        @updatedAt
   category    Category        @relation(fields: [categoryId], references: [id])
   company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  clientId    String?
+  client      AccountClient?  @relation(fields: [clientId], references: [id])
 
   @@index([companyId])
   @@index([userId])
@@ -166,4 +170,10 @@ enum Role {
 enum TransactionType {
   INGRESO
   EGRESO
+}
+
+enum CounterpartyType {
+  CLIENT
+  SUPPLIER
+  BOTH
 }

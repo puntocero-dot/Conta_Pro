@@ -57,11 +57,32 @@ export default function HumanFriendlyLedger() {
             });
             if (response.ok) {
                 const data = await response.json();
-                setEntries(data.entries || []);
+                const rawEntries = data.entries || [];
+                
+                // Map JournalEntry with lines to a flat LedgerEntry for the UI
+                const mappedEntries: LedgerEntry[] = rawEntries.map((je: any) => {
+                    // Find the main "affected" account (usually the one with debit/credit)
+                    const mainLine = je.lines?.[0] || { debit: 0, credit: 0, account: { name: 'Cuenta desconocida' } };
+                    const isCredit = mainLine.credit > 0;
+                    
+                    return {
+                        id: je.id,
+                        date: je.date,
+                        description: je.description,
+                        amount: isCredit ? mainLine.credit : mainLine.debit,
+                        type: isCredit ? 'CREDIT' : 'DEBIT',
+                        account: {
+                            name: mainLine.account?.name || 'Desconocida'
+                        },
+                        createdAt: je.createdAt
+                    };
+                });
+
+                setEntries(mappedEntries);
 
                 // Calculate pseudo-stats from entries
-                const balance = data.entries.reduce((acc: number, curr: LedgerEntry) =>
-                    curr.type === 'CREDIT' ? acc + curr.amount : acc - curr.amount, 0);
+                const balance = mappedEntries.reduce((acc: number, curr: LedgerEntry) =>
+                    curr.type === 'CREDIT' ? acc + (curr.amount || 0) : acc - (curr.amount || 0), 0);
                 setStats({ balance, change: 12 }); // Change is hardcoded for demo
             }
         } catch (error) {
@@ -128,7 +149,7 @@ export default function HumanFriendlyLedger() {
                                 <Wallet className="w-4 h-4 text-emerald-400" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-slate-100">${stats.balance.toLocaleString()}</div>
+                                <div className="text-2xl font-bold text-slate-100">${(stats.balance || 0).toLocaleString()}</div>
                                 <p className="text-xs text-emerald-400 flex items-center mt-1">
                                     <ArrowUpRight className="w-3 h-3 mr-1" /> +{stats.change}% vs periodo anterior
                                 </p>
@@ -164,7 +185,7 @@ export default function HumanFriendlyLedger() {
                                             </div>
                                             <div className="text-right">
                                                 <div className={`font-bold ${entry.type === 'CREDIT' ? 'text-emerald-400' : 'text-red-400'}`}>
-                                                    {entry.type === 'CREDIT' ? '+' : '-'}${entry.amount.toLocaleString()}
+                                                    {entry.type === 'CREDIT' ? '+' : '-'}${(entry.amount || 0).toLocaleString()}
                                                 </div>
                                                 <Badge variant="secondary" className="mt-1 bg-slate-800 text-slate-400 text-[10px] py-0 px-2">
                                                     ASIENTO AUTOMÁTICO

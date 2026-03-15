@@ -15,6 +15,7 @@ interface Client {
     dui?: string;
     address?: string;
     type: 'INDIVIDUAL' | 'COMPANY';
+    role: 'CLIENT' | 'SUPPLIER' | 'BOTH';
     balance: number;
 }
 
@@ -26,6 +27,7 @@ export default function ClientsPage() {
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'INDIVIDUAL' | 'COMPANY'>('ALL');
+    const [roleFilter, setRoleFilter] = useState<'ALL' | 'CLIENT' | 'SUPPLIER' | 'BOTH'>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
 
     const fetchClients = useCallback(async () => {
@@ -48,6 +50,25 @@ export default function ClientsPage() {
         }
     }, [activeCompanyId]);
 
+    const fetchClientsByRole = useCallback(async (role: string) => {
+        if (!activeCompanyId) return;
+        setLoading(true);
+        try {
+            const url = role === 'ALL' ? '/api/clients' : `/api/clients?role=${role}`;
+            const response = await fetch(url, {
+                headers: { 'x-company-id': activeCompanyId }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setClients(data.clients || []);
+            }
+        } catch (error) {
+            console.error('Error fetching clients by role:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [activeCompanyId]);
+
     useEffect(() => {
         if (!authLoading && !user) {
             router.push('/login');
@@ -56,12 +77,13 @@ export default function ClientsPage() {
 
     useEffect(() => {
         if (activeCompanyId) {
-            fetchClients();
+            if (roleFilter === 'ALL') fetchClients();
+            else fetchClientsByRole(roleFilter);
         } else {
             setClients([]);
             setLoading(false);
         }
-    }, [activeCompanyId, fetchClients]);
+    }, [activeCompanyId, roleFilter, fetchClients, fetchClientsByRole]);
 
     const filteredClients = clients.filter(c => {
         const matchesFilter = filter === 'ALL' || c.type === filter;
@@ -99,7 +121,7 @@ export default function ClientsPage() {
 
             {!activeCompanyId && (
                 <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed #cbd5e1', marginBottom: '2rem' }}>
-                    <p>Selecciona una empresa en el panel lateral para gestionar sus clientes.</p>
+                    <p>Selecciona una empresa en el panel lateral para gestionar sus clientes y proveedores.</p>
                 </div>
             )}
 
@@ -117,15 +139,15 @@ export default function ClientsPage() {
                         <div className={styles.statCard}>
                             <div className={styles.statIcon}>🏢</div>
                             <div className={styles.statInfo}>
-                                <p>Empresas</p>
-                                <h3>{clients.filter(c => c.type === 'COMPANY').length}</h3>
+                                <p>Proveedores</p>
+                                <h3>{clients.filter(c => c.role === 'SUPPLIER' || c.role === 'BOTH').length}</h3>
                             </div>
                         </div>
                         <div className={styles.statCard}>
                             <div className={styles.statIcon}>💰</div>
                             <div className={styles.statInfo}>
                                 <p>Saldo Pendiente</p>
-                                <h3>${totalBalance.toLocaleString('es-MX')}</h3>
+                                <h3>${(totalBalance ?? 0).toLocaleString('es-MX')}</h3>
                             </div>
                         </div>
                     </div>
@@ -151,6 +173,26 @@ export default function ClientsPage() {
                                     onClick={() => setFilter('COMPANY')}
                                 >
                                     Empresas
+                                </button>
+                            </div>
+                            <div className={styles.filters}>
+                                <button
+                                    className={roleFilter === 'ALL' ? styles.filterActive : styles.filterBtn}
+                                    onClick={() => setRoleFilter('ALL')}
+                                >
+                                    Filtro Rol: Todos
+                                </button>
+                                <button
+                                    className={roleFilter === 'CLIENT' ? styles.filterActive : styles.filterBtn}
+                                    onClick={() => setRoleFilter('CLIENT')}
+                                >
+                                    Clientes
+                                </button>
+                                <button
+                                    className={roleFilter === 'SUPPLIER' ? styles.filterActive : styles.filterBtn}
+                                    onClick={() => setRoleFilter('SUPPLIER')}
+                                >
+                                    Proveedores
                                 </button>
                             </div>
                             <div style={{ position: 'relative' }}>
@@ -191,13 +233,13 @@ export default function ClientsPage() {
                                             <div className={styles.clientDetails}>
                                                 {client.email && <span>✉️ {client.email}</span>}
                                                 {client.phone && <span>📞 {client.phone}</span>}
-                                                {client.nit && <span>🏛️ {client.nit}</span>}
+                                                <span className={styles.roleBadge}>{client.role}</span>
                                             </div>
                                         </div>
                                         <div className={styles.clientBalance}>
                                             <p>Saldo</p>
-                                            <h4 className={client.balance > 0 ? styles.positive : ''}>
-                                                ${client.balance.toLocaleString('es-MX')}
+                                            <h4 className={(client.balance ?? 0) > 0 ? styles.positive : ''}>
+                                                ${(client.balance ?? 0).toLocaleString('es-MX')}
                                             </h4>
                                         </div>
                                         <button className="btn btn-ghost" style={{ fontSize: '1.25rem' }}>
@@ -242,6 +284,7 @@ function NewClientModal({
         nit: '',
         dui: '',
         address: '',
+        role: 'CLIENT' as 'CLIENT' | 'SUPPLIER' | 'BOTH',
     });
     const [loading, setLoading] = useState(false);
 
@@ -296,6 +339,22 @@ function NewClientModal({
                         >
                             🏢 Empresa / Entidad
                         </button>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                        <label className="label">Función en el Negocio</label>
+                        <select 
+                            className="input"
+                            value={formData.role}
+                            onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                        >
+                            <option value="CLIENT">Damos servicios (Cliente)</option>
+                            <option value="SUPPLIER">Nos provee productos (Proveedor)</option>
+                            <option value="BOTH">Ambos (Cliente y Proveedor)</option>
+                        </select>
+                        <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem' }}>
+                            Esto ayuda a separar el flujo de ingresos de los costos de operación.
+                        </p>
                     </div>
 
                     <div className="form-group">

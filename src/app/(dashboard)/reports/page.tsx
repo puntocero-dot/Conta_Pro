@@ -136,7 +136,7 @@ export default function ReportsPage() {
                                     <div className={styles.cardIcon}>📈</div>
                                     <div className={styles.cardContent}>
                                         <p>Ingresos</p>
-                                        <h2>${reportData.totalIngresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <h2>${(reportData.totalIngresos ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                                     </div>
                                 </div>
 
@@ -144,7 +144,7 @@ export default function ReportsPage() {
                                     <div className={styles.cardIcon}>📉</div>
                                     <div className={styles.cardContent}>
                                         <p>Egresos</p>
-                                        <h2>${reportData.totalEgresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <h2>${(reportData.totalEgresos ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                                     </div>
                                 </div>
 
@@ -153,7 +153,7 @@ export default function ReportsPage() {
                                     <div className={styles.cardContent}>
                                         <p>Balance</p>
                                         <h2 className={reportData.balance >= 0 ? styles.positive : styles.negative}>
-                                            ${reportData.balance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                            ${(reportData.balance ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                         </h2>
                                     </div>
                                 </div>
@@ -162,7 +162,7 @@ export default function ReportsPage() {
                                     <div className={styles.cardIcon}>🏛️</div>
                                     <div className={styles.cardContent}>
                                         <p>IVA Neto (13%)</p>
-                                        <h2>${reportData.iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <h2>${(reportData.iva ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                                         <small style={{ fontSize: '0.7rem', color: '#64748b' }}>
                                             Débito: ${reportData.ivaDebito.toFixed(2)} | Crédito: ${reportData.ivaCredito.toFixed(2)}
                                         </small>
@@ -173,7 +173,7 @@ export default function ReportsPage() {
                                     <div className={styles.cardIcon}>🏧</div>
                                     <div className={styles.cardContent}>
                                         <p>Pago a Cuenta (1.75%)</p>
-                                        <h2>${reportData.pagoACuenta.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <h2>${(reportData.pagoACuenta ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                                         <small style={{ fontSize: '0.7rem' }}>Obligación mensual SV</small>
                                     </div>
                                 </div>
@@ -182,7 +182,7 @@ export default function ReportsPage() {
                                     <div className={styles.cardIcon}>📝</div>
                                     <div className={styles.cardContent}>
                                         <p>Est. Renta Anual</p>
-                                        <h2>${reportData.rentaEstimada.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
+                                        <h2>${(reportData.rentaEstimada ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h2>
                                         <small style={{ fontSize: '0.7rem' }}>Proyección sobre utilidad</small>
                                     </div>
                                 </div>
@@ -200,7 +200,7 @@ export default function ReportsPage() {
                                                 <div className={styles.categoryInfo}>
                                                     <span className={styles.categoryName}>{cat.name}</span>
                                                     <span className={styles.categoryAmount}>
-                                                        ${cat.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                                        ${(cat.amount ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                                     </span>
                                                 </div>
                                                 <div className={styles.progressBar}>
@@ -227,7 +227,7 @@ export default function ReportsPage() {
                                     <div className={styles.statItem}>
                                         <span>Ticket Promedio</span>
                                         <strong>
-                                            ${(reportData.totalIngresos / (reportData.transactionCount || 1)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                            ${((reportData.totalIngresos ?? 0) / (reportData.transactionCount || 1)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                         </strong>
                                     </div>
                                     <div className={styles.statItem}>

@@ -10,18 +10,18 @@ export async function GET(request: NextRequest) {
         }
 
         const companyId = await getCompanyIdFromRequest(request, auth.userId);
-
         if (!companyId) {
             return NextResponse.json({ clients: [] });
         }
 
-        if (!(prisma as any).accountClient) {
-            console.error('Prisma model "accountClient" is not available in the current client');
-            return NextResponse.json({ clients: [] });
-        }
+        const { searchParams } = new URL(request.url);
+        const role = searchParams.get('role');
 
-        const clients = await (prisma as any).accountClient.findMany({
-            where: { companyId },
+        const clients = await prisma.accountClient.findMany({
+            where: { 
+                companyId,
+                ...(role ? { role: role as any } : {})
+            },
             orderBy: { name: 'asc' }
         });
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, email, phone, nit, dui, address, type } = body;
+        const { name, email, phone, nit, dui, address, type, role } = body;
 
         if (!name || !type) {
             return NextResponse.json(
@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
         }
 
         const companyId = await getCompanyIdFromRequest(request, auth.userId);
-
         if (!companyId) {
             return NextResponse.json(
                 { error: 'El usuario debe tener al menos una empresa para registrar clientes' },
@@ -61,14 +60,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!(prisma as any).accountClient) {
-            return NextResponse.json(
-                { error: 'El sistema de clientes no está listo. Sincroniza la base de datos.' },
-                { status: 503 }
-            );
-        }
-
-        const client = await (prisma as any).accountClient.create({
+        const client = await (prisma.accountClient as any).create({
             data: {
                 name,
                 email,
@@ -77,6 +69,7 @@ export async function POST(request: NextRequest) {
                 dui,
                 address,
                 type,
+                role: (role as any) || 'CLIENT',
                 companyId
             }
         });

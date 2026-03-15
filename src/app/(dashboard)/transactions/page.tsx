@@ -116,7 +116,7 @@ export default function TransactionsPage() {
                             <div className={styles.statIcon}>📈</div>
                             <div className={styles.statContent}>
                                 <p className={styles.statLabel}>Ingresos</p>
-                                <h3 className={styles.statValue}>${totalIngresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                                <h3 className={styles.statValue}>${(totalIngresos ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
 
@@ -124,15 +124,15 @@ export default function TransactionsPage() {
                             <div className={styles.statIcon}>📉</div>
                             <div className={styles.statContent}>
                                 <p className={styles.statLabel}>Egresos</p>
-                                <h3 className={styles.statValue}>${totalEgresos.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                                <h3 className={styles.statValue}>${(totalEgresos ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
 
                         <div className={`${styles.statCard} ${balance >= 0 ? styles.positive : styles.negative}`}>
                             <div className={styles.statIcon}>{balance >= 0 ? '✅' : '⚠️'}</div>
                             <div className={styles.statContent}>
-                                <p className={styles.statLabel}>Balance Neto</p>
-                                <h3 className={styles.statValue}>${balance.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                                <p className={styles.statLabel}>Situación Neta</p>
+                                <h3 className={styles.statValue}>${(balance ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
                             </div>
                         </div>
                     </div>
@@ -192,7 +192,7 @@ export default function TransactionsPage() {
                                     </div>
                                     <div className={`${styles.transactionAmount} ${transaction.type === 'INGRESO' ? styles.amountIncome : styles.amountExpense}`}>
                                         {transaction.type === 'INGRESO' ? '+' : '-'}
-                                        ${transaction.amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                        ${(transaction.amount ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                     </div>
                                 </div>
                             ))
@@ -237,21 +237,28 @@ function NewTransactionModal({
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const fetchClients = async () => {
+        const fetchCounterparties = async () => {
             try {
-                const response = await fetch('/api/clients', {
+                // Filter by role: Income -> CLIENT, Expense -> SUPPLIER
+                // We also include 'BOTH' in both cases
+                const targetRole = formData.type === 'INGRESO' ? 'CLIENT' : 'SUPPLIER';
+                const response = await fetch(`/api/clients`, {
                     headers: { 'x-company-id': companyId }
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    setClients(data.clients || []);
+                    // Filter locally for simplicity, or we could update API to support multiple roles
+                    const filtered = data.clients.filter((c: any) => 
+                        c.role === targetRole || c.role === 'BOTH'
+                    );
+                    setClients(filtered);
                 }
             } catch (error) {
-                console.error('Error fetching clients:', error);
+                console.error('Error fetching counterparties:', error);
             }
         };
-        fetchClients();
-    }, [companyId]);
+        fetchCounterparties();
+    }, [companyId, formData.type]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -326,7 +333,7 @@ function NewTransactionModal({
                     </div>
 
                     <div className="form-group">
-                        <label className="label">Cliente / Entidad (Opcional)</label>
+                        <label className="label">{formData.type === 'INGRESO' ? 'Cliente que paga' : 'Proveedor del gasto'}</label>
                         <select
                             className="input"
                             value={formData.clientId}

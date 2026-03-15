@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Crear la transacción
-        const transaction = await prisma.transaction.create({
+        const transaction = await (prisma.transaction as any).create({
             data: {
                 type,
                 amount: parseFloat(amount.toString()),
@@ -94,19 +94,21 @@ export async function POST(request: NextRequest) {
                 categoryId: finalCategoryId,
                 companyId,
                 userId: auth.userId,
-                metadata: clientId ? { clientId } : undefined,
+                clientId: clientId || null,
             },
             include: {
                 category: true,
+                client: true,
             },
         });
 
         // Procesar en el Ledger (Contabilidad Invisible)
         try {
+            const trans = transaction as any;
             await LedgerService.processTransaction({
                 companyId,
                 amount: transaction.amount,
-                category: transaction.category.name,
+                category: trans.category?.name || 'Varios',
                 description,
                 reference: transaction.id,
                 date: transaction.date,
