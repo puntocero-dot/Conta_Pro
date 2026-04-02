@@ -84,11 +84,12 @@ export async function middleware(request: NextRequest) {
         'Content-Security-Policy',
         [
             "default-src 'self'",
-            "script-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "img-src 'self' blob: data:",
+            "img-src 'self' blob: data: https://*.supabase.co",
             "font-src 'self' https://fonts.gstatic.com",
-            "connect-src 'self' https://api.pwnedpasswords.com",
+            "connect-src 'self' https://api.pwnedpasswords.com https://*.supabase.co",
+            "frame-ancestors 'none'",
         ].join('; ')
     );
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
