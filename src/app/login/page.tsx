@@ -16,26 +16,6 @@ export default function LoginPage() {
         setLoading(true);
         setError('');
 
-        // Verificar rate limiting
-        try {
-            const rateLimitResponse = await fetch('/api/auth/check-rate-limit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier: email.trim() }),
-            });
-
-            const rateLimitData = await rateLimitResponse.json();
-
-            if (!rateLimitData.allowed) {
-                const minutes = Math.ceil(rateLimitData.retryAfter / 60);
-                setError(`Demasiados intentos fallidos. Intenta nuevamente en ${minutes} minuto(s).`);
-                setLoading(false);
-                return;
-            }
-        } catch (err) {
-            console.error('Error checking rate limit:', err);
-        }
-
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -46,31 +26,14 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.error || 'Error al iniciar sesión');
-                setLoading(false);
-
-                // Registrar intento fallido
-                try {
-                    await fetch('/api/auth/record-failed-attempt', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ identifier: email.trim() }),
-                    });
-                } catch (err) {
-                    console.error('Error recording failed attempt:', err);
+                if (res.status === 429 && data.retryAfter) {
+                    const minutes = Math.ceil(data.retryAfter / 60);
+                    setError(`Demasiados intentos fallidos. Intenta en ${minutes} minuto(s).`);
+                } else {
+                    setError(data.error || 'Error al iniciar sesión');
                 }
+                setLoading(false);
                 return;
-            }
-
-            // Login exitoso, limpiar rate limit
-            try {
-                await fetch('/api/auth/clear-rate-limit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier: email.trim() }),
-                });
-            } catch (err) {
-                console.error('Error clearing rate limit:', err);
             }
 
             router.push('/dashboard');
