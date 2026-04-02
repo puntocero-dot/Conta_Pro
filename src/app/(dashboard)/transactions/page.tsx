@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useCompany } from '@/context/CompanyContext';
+import { useFilter } from '@/context/FilterContext';
 import { useToast } from '@/context/ToastContext';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonStatsGrid, SkeletonTable } from '@/components/ui/Skeleton';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { PlusIcon, TrendingUpIcon, TrendingDownIcon, WalletIcon, PencilIcon, XIcon } from '@/components/icons';
 import { formatCurrency, formatDate } from '@/lib/formatting';
 import styles from './transactions.module.css';
 
@@ -26,6 +31,7 @@ interface Transaction {
 
 export default function TransactionsPage() {
     const { activeCompanyId, isLoading: companyLoading } = useCompany();
+    const { startDate, endDate } = useFilter();
     const { showToast } = useToast();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
@@ -38,7 +44,8 @@ export default function TransactionsPage() {
         if (!activeCompanyId) return;
         setLoading(true);
         try {
-            const response = await fetch('/api/transactions', {
+            const url = `/api/transactions?startDate=${startDate}&endDate=${endDate}&limit=200`;
+            const response = await fetch(url, {
                 headers: {
                     'x-company-id': activeCompanyId,
                     'X-Requested-With': 'XMLHttpRequest',
@@ -53,7 +60,7 @@ export default function TransactionsPage() {
         } finally {
             setLoading(false);
         }
-    }, [activeCompanyId]);
+    }, [activeCompanyId, startDate, endDate]);
 
     useEffect(() => {
         if (activeCompanyId) {
@@ -62,7 +69,7 @@ export default function TransactionsPage() {
             setTransactions([]);
             setLoading(false);
         }
-    }, [activeCompanyId, fetchTransactions]);
+    }, [activeCompanyId, startDate, endDate, fetchTransactions]);
 
     const filteredTransactions = transactions.filter(t =>
         filter === 'ALL' || t.type === filter
@@ -75,12 +82,7 @@ export default function TransactionsPage() {
     if (companyLoading || (loading && transactions.length === 0 && activeCompanyId)) {
         return (
             <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                    <div>
-                        <h1>Transacciones</h1>
-                        <p>Historial financiero y control de caja</p>
-                    </div>
-                </div>
+                <PageHeader title="Transacciones" subtitle="Historial financiero y control de caja" />
                 <SkeletonStatsGrid count={3} />
                 <div style={{ marginTop: '1.5rem' }}>
                     <SkeletonTable rows={5} cols={4} />
@@ -91,19 +93,18 @@ export default function TransactionsPage() {
 
     return (
         <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
-                <div>
-                    <h1>Transacciones</h1>
-                    <p>Historial financiero y control de caja</p>
-                </div>
+            <PageHeader
+                title="Transacciones"
+                subtitle={transactions.length > 0 ? `${transactions.length} operaciones en el período` : 'Historial financiero y control de caja'}
+            >
                 <button
                     onClick={() => setShowNewModal(true)}
                     className="btn btn-primary"
                     disabled={!activeCompanyId}
                 >
-                    <span style={{ fontSize: '1.2rem' }}>+</span> Nueva Transacción
+                    <PlusIcon size={16} /> Nueva Transacción
                 </button>
-            </div>
+            </PageHeader>
 
             {!activeCompanyId ? (
                 <EmptyState
@@ -113,42 +114,24 @@ export default function TransactionsPage() {
                 />
             ) : (
                 <>
-                    {/* Stats Cards */}
+                    {/* Stats */}
                     <div className={styles.statsGrid}>
-                        <div className={`${styles.statCard} ${styles.income}`}>
-                            <div className={styles.statIcon}>📈</div>
-                            <div className={styles.statContent}>
-                                <p className={styles.statLabel}>Ingresos</p>
-                                <h3 className={styles.statValue}>{formatCurrency(totalIngresos)}</h3>
-                            </div>
-                        </div>
-                        <div className={`${styles.statCard} ${styles.expense}`}>
-                            <div className={styles.statIcon}>📉</div>
-                            <div className={styles.statContent}>
-                                <p className={styles.statLabel}>Egresos</p>
-                                <h3 className={styles.statValue}>{formatCurrency(totalEgresos)}</h3>
-                            </div>
-                        </div>
-                        <div className={`${styles.statCard} ${balance >= 0 ? styles.positive : styles.negative}`}>
-                            <div className={styles.statIcon}>{balance >= 0 ? '✅' : '⚠️'}</div>
-                            <div className={styles.statContent}>
-                                <p className={styles.statLabel}>Situación Neta</p>
-                                <h3 className={styles.statValue}>{formatCurrency(balance)}</h3>
-                            </div>
-                        </div>
+                        <StatCard label="Ingresos" value={formatCurrency(totalIngresos)} icon={<TrendingUpIcon size={16} />} variant="income" />
+                        <StatCard label="Egresos" value={formatCurrency(totalEgresos)} icon={<TrendingDownIcon size={16} />} variant="expense" />
+                        <StatCard label="Balance neto" value={formatCurrency(balance)} icon={<WalletIcon size={16} />} variant={balance >= 0 ? 'neutral' : 'expense'} />
                     </div>
 
                     {/* Filters */}
-                    <div className={styles.filters}>
-                        {(['ALL', 'INGRESO', 'EGRESO'] as const).map(f => (
-                            <button
-                                key={f}
-                                className={filter === f ? styles.filterActive : styles.filterBtn}
-                                onClick={() => setFilter(f)}
-                            >
-                                {f === 'ALL' ? 'Todas' : f === 'INGRESO' ? 'Ingresos' : 'Egresos'}
-                            </button>
-                        ))}
+                    <div className={styles.filtersRow}>
+                        <FilterBar
+                            options={[
+                                { value: 'ALL', label: 'Todas' },
+                                { value: 'INGRESO', label: 'Ingresos' },
+                                { value: 'EGRESO', label: 'Egresos' },
+                            ]}
+                            value={filter}
+                            onChange={(v) => setFilter(v as 'ALL' | 'INGRESO' | 'EGRESO')}
+                        />
                     </div>
 
                     {/* Transactions List */}
@@ -198,7 +181,7 @@ export default function TransactionsPage() {
                                             title="Corregir"
                                             disabled={transaction.status === 'ANNULLED'}
                                         >
-                                            ✏️
+                                            <PencilIcon size={15} />
                                         </button>
                                         <button
                                             onClick={() => setAnnullingId(transaction.id)}
@@ -207,7 +190,7 @@ export default function TransactionsPage() {
                                             style={{ color: '#ef4444' }}
                                             disabled={transaction.status === 'ANNULLED'}
                                         >
-                                            🚫
+                                            <XIcon size={15} />
                                         </button>
                                     </div>
                                 </div>
@@ -339,8 +322,8 @@ function TransactionModal({
                 <div className="form-group">
                     <label className="label">Tipo de Movimiento</label>
                     <div className={styles.typeButtons}>
-                        <button type="button" className={formData.type === 'INGRESO' ? styles.typeActive : ''} onClick={() => !initialData && setFormData(p => ({ ...p, type: 'INGRESO' }))} disabled={!!initialData}>📈 Ingreso</button>
-                        <button type="button" className={formData.type === 'EGRESO' ? styles.typeActive : ''} onClick={() => !initialData && setFormData(p => ({ ...p, type: 'EGRESO' }))} disabled={!!initialData}>📉 Egreso</button>
+                        <button type="button" className={formData.type === 'INGRESO' ? styles.typeActive : ''} onClick={() => !initialData && setFormData(p => ({ ...p, type: 'INGRESO' }))} disabled={!!initialData}><TrendingUpIcon size={15} /> Ingreso</button>
+                        <button type="button" className={formData.type === 'EGRESO' ? styles.typeActive : ''} onClick={() => !initialData && setFormData(p => ({ ...p, type: 'EGRESO' }))} disabled={!!initialData}><TrendingDownIcon size={15} /> Egreso</button>
                     </div>
                 </div>
                 <div className="form-group">

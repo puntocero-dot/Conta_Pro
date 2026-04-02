@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import styles from './EmptyState.module.css';
 
 interface EmptyStateProps {
-    icon?: string;
+    icon?: string | ReactNode;
     title: string;
     description?: string;
     actionLabel?: string;

@@ -2,8 +2,13 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useCompany } from '@/context/CompanyContext';
+import { useFilter } from '@/context/FilterContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BalanceCard } from '@/components/ui/BalanceCard';
+import { StatCard } from '@/components/ui/StatCard';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { WalletIcon, BarChartIcon, BuildingIcon, TrendingUpIcon, TrendingDownIcon } from '@/components/icons';
 import styles from './dashboard.module.css';
 
 interface DashboardStats {
@@ -11,11 +16,22 @@ interface DashboardStats {
     totalEgresos: number;
     balance: number;
     transactionCount: number;
+    previousPeriod?: {
+        totalIngresos: number;
+        totalEgresos: number;
+        balance: number;
+    };
+}
+
+function calcDelta(current: number, previous: number): number | undefined {
+    if (!previous) return undefined;
+    return ((current - previous) / Math.abs(previous)) * 100;
 }
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
     const { activeCompanyId, isLoading: companyLoading } = useCompany();
+    const { startDate, endDate } = useFilter();
     const router = useRouter();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isFetching, setIsFetching] = useState(false);
@@ -29,12 +45,12 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchDashboardData = async () => {
             if (!activeCompanyId) return;
-
             setIsFetching(true);
             try {
-                const response = await fetch('/api/reports', {
+                const response = await fetch(`/api/reports?startDate=${startDate}&endDate=${endDate}`, {
                     headers: {
-                        'x-company-id': activeCompanyId
+                        'x-company-id': activeCompanyId,
+                        'X-Requested-With': 'XMLHttpRequest',
                     }
                 });
                 if (response.ok) {
@@ -51,107 +67,89 @@ export default function DashboardPage() {
         if (activeCompanyId) {
             fetchDashboardData();
         }
-    }, [activeCompanyId]);
+    }, [activeCompanyId, startDate, endDate]);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(amount);
-    };
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
     const loading = authLoading || companyLoading || (isFetching && !stats);
 
     if (loading) {
         return (
             <div className={styles.loadingContainer}>
-                <div className={styles.spinner}></div>
-                <p>Cargando datos financieros...</p>
+                <div className={styles.spinner} />
+                <p>Cargando...</p>
             </div>
         );
     }
 
     if (!user) return null;
 
+    const prev = stats?.previousPeriod;
+
     return (
-        <div className="animate-fade-in">
-            <main className={styles.main}>
-                <div className={styles.welcome}>
-                    <h2>¡Bienvenido! 👋</h2>
-                    <p>Sistema de Contabilidad con Seguridad de Nivel Bancario</p>
-                </div>
+        <div>
+            <PageHeader
+                title={`Hola, ${user.email?.split('@')[0]}`}
+                subtitle="Aquí tienes un resumen del período seleccionado."
+            />
 
-                <div className={styles.quickActions}>
-                    <button
-                        onClick={() => router.push('/transactions')}
-                        className={`${styles.actionCard} ${styles.primary}`}
-                    >
-                        <div className={styles.actionIcon}>💸</div>
-                        <h3>Nueva Transacción</h3>
+            {stats && (
+                <BalanceCard
+                    balance={stats.balance}
+                    ingresos={stats.totalIngresos}
+                    egresos={stats.totalEgresos}
+                    previousBalance={prev?.balance}
+                />
+            )}
+
+            <div className={styles.statsGrid}>
+                <StatCard
+                    label="Ingresos"
+                    value={formatCurrency(stats?.totalIngresos || 0)}
+                    icon={<TrendingUpIcon size={16} />}
+                    variant="income"
+                    delta={prev ? calcDelta(stats!.totalIngresos, prev.totalIngresos) : undefined}
+                />
+                <StatCard
+                    label="Egresos"
+                    value={formatCurrency(stats?.totalEgresos || 0)}
+                    icon={<TrendingDownIcon size={16} />}
+                    variant="expense"
+                    delta={prev ? calcDelta(stats!.totalEgresos, prev.totalEgresos) : undefined}
+                />
+                <StatCard
+                    label="Transacciones"
+                    value={stats?.transactionCount || 0}
+                    icon={<WalletIcon size={16} />}
+                    variant="neutral"
+                />
+            </div>
+
+            <h2 className={styles.sectionTitle}>Acciones rápidas</h2>
+            <div className={styles.quickActions}>
+                <button onClick={() => router.push('/transactions')} className={styles.actionCard}>
+                    <span className={styles.actionIcon}><WalletIcon size={22} /></span>
+                    <div>
+                        <h3>Transacciones</h3>
                         <p>Registra ingresos y egresos</p>
-                    </button>
-
-                    <button
-                        onClick={() => router.push('/reports')}
-                        className={`${styles.actionCard} ${styles.secondary}`}
-                    >
-                        <div className={styles.actionIcon}>📈</div>
-                        <h3>Ver Reportes</h3>
-                        <p>Análisis financiero mensual</p>
-                    </button>
-
-                    <button
-                        onClick={() => router.push('/companies')}
-                        className={`${styles.actionCard} ${styles.accent}`}
-                    >
-                        <div className={styles.actionIcon}>🏢</div>
+                    </div>
+                </button>
+                <button onClick={() => router.push('/reports')} className={styles.actionCard}>
+                    <span className={styles.actionIcon}><BarChartIcon size={22} /></span>
+                    <div>
+                        <h3>Reportes</h3>
+                        <p>Análisis financiero del período</p>
+                    </div>
+                </button>
+                <button onClick={() => router.push('/companies')} className={styles.actionCard}>
+                    <span className={styles.actionIcon}><BuildingIcon size={22} /></span>
+                    <div>
                         <h3>Empresas</h3>
                         <p>Gestiona tus empresas</p>
-                    </button>
-                </div>
-
-                <div className={styles.statsCards}>
-                    <div className={styles.statCard}>
-                        <div className={styles.statIcon}>💰</div>
-                        <div className={styles.statContent}>
-                            <p>Ingresos</p>
-                            <h3>{formatCurrency(stats?.totalIngresos || 0)}</h3>
-                            <span>Este mes</span>
-                        </div>
                     </div>
-
-                    <div className={styles.statCard}>
-                        <div className={styles.statIcon}>📊</div>
-                        <div className={styles.statContent}>
-                            <p>Egresos</p>
-                            <h3>{formatCurrency(stats?.totalEgresos || 0)}</h3>
-                            <span>Este mes</span>
-                        </div>
-                    </div>
-
-                    <div className={styles.statCard}>
-                        <div className={styles.statIcon}>📈</div>
-                        <div className={styles.statContent}>
-                            <p>Balance</p>
-                            <h3 style={{ color: (stats?.balance || 0) >= 0 ? '#10b981' : '#ef4444' }}>
-                                {formatCurrency(stats?.balance || 0)}
-                            </h3>
-                            <span>Neto</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className={styles.securityBanner}>
-                    <div className={styles.securityIcon}>🛡️</div>
-                    <div className={styles.securityContent}>
-                        <h4>Protección Activa</h4>
-                        <p>Tus datos están encriptados con AES-256</p>
-                        <p style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '4px' }}>
-                            Sesión segura para: {user.email}
-                        </p>
-                    </div>
-                </div>
-            </main>
+                </button>
+            </div>
         </div>
     );
 }

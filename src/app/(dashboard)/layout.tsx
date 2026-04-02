@@ -4,13 +4,21 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { CompanyProvider } from '@/context/CompanyContext';
+import { FilterProvider } from '@/context/FilterContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { CompanySelector } from '@/components/ui/CompanySelector';
+import { DateRangePicker } from '@/components/ui/DateRangePicker';
+import {
+    HomeIcon, SparklesIcon, BuildingIcon, UsersIcon,
+    WalletIcon, BarChartIcon, ShieldIcon, ClipboardIcon, LogOutIcon
+} from '@/components/icons';
 import styles from './layout.module.css';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardContent({ children }: { children: React.ReactNode }) {
     const { user, role, logout } = useAuth();
+    const { theme } = useTheme();
     const router = useRouter();
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -33,14 +41,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
 
     const menuItems = [
-        { path: '/dashboard', icon: '🏠', label: 'Dashboard', roles: ['all'] },
-        { path: '/invisible-ledger', icon: '✨', label: 'Bienestar Financiero', roles: ['all'] },
-        { path: '/companies', icon: '🏢', label: 'Empresas', roles: ['all'] },
-        { path: '/clients', icon: '👥', label: 'Clientes', roles: ['all'] },
-        { path: '/transactions', icon: '💰', label: 'Transacciones', roles: ['all'] },
-        { path: '/reports', icon: '📊', label: 'Reportes', roles: ['all'] },
-        { path: '/security-dashboard', icon: '🔐', label: 'Seguridad', roles: ['SUPER_ADMIN'] },
-        { path: '/security/audit-logs', icon: '📋', label: 'Auditoría', roles: ['AUDITOR'] },
+        { path: '/dashboard', icon: <HomeIcon size={18} />, label: 'Dashboard', roles: ['all'] },
+        { path: '/invisible-ledger', icon: <SparklesIcon size={18} />, label: 'Bienestar Financiero', roles: ['all'] },
+        { path: '/companies', icon: <BuildingIcon size={18} />, label: 'Empresas', roles: ['all'] },
+        { path: '/clients', icon: <UsersIcon size={18} />, label: 'Clientes', roles: ['all'] },
+        { path: '/transactions', icon: <WalletIcon size={18} />, label: 'Transacciones', roles: ['all'] },
+        { path: '/reports', icon: <BarChartIcon size={18} />, label: 'Reportes', roles: ['all'] },
+        { path: '/security-dashboard', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN'] },
+        { path: '/security/audit-logs', icon: <ClipboardIcon size={18} />, label: 'Auditoría', roles: ['AUDITOR'] },
     ];
 
     const filteredMenu = menuItems.filter(item =>
@@ -65,6 +73,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <CompanyProvider>
+            <ThemeProvider>
+            <FilterProvider>
             <ToastProvider>
                 <div className={styles.layout}>
                     {/* Mobile overlay */}
@@ -80,10 +90,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div className={styles.sidebarHeader}>
                             <div className={styles.logo}>
                                 <div className={styles.logoIcon}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                        <polyline points="9 22 9 12 15 12 15 22" />
-                                    </svg>
+                                    {theme.logoUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={theme.logoUrl} alt="Logo" style={{ width: 20, height: 20, objectFit: 'contain', borderRadius: 4 }} />
+                                    ) : (
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                            <polyline points="9 22 9 12 15 12 15 22" />
+                                        </svg>
+                                    )}
                                 </div>
                                 {sidebarOpen && <span>Conta Pro</span>}
                             </div>
@@ -126,7 +141,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 )}
                             </div>
                             <button onClick={handleLogout} className={styles.logoutBtn} aria-label="Cerrar sesión">
-                                <span>🚪</span> {sidebarOpen && <span>Cerrar Sesión</span>}
+                                <LogOutIcon size={16} />
+                                {sidebarOpen && <span>Cerrar Sesión</span>}
                             </button>
                         </div>
                     </aside>
@@ -148,21 +164,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 {getSectionTitle(pathname)}
                             </div>
                             <div className={styles.topBarActions}>
-                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                    {new Date().toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                </span>
+                                <DateRangePicker />
                             </div>
                         </header>
                         <div className={styles.contentWrapper}>
-                            <ErrorBoundary>
-                                <div className="animate-fade-in">
-                                    {children}
-                                </div>
-                            </ErrorBoundary>
+                            <div className={styles.contentInner}>
+                                <ErrorBoundary>
+                                    <div className="animate-fade-in">
+                                        {children}
+                                    </div>
+                                </ErrorBoundary>
+                            </div>
                         </div>
                     </main>
                 </div>
             </ToastProvider>
+            </FilterProvider>
+            </ThemeProvider>
         </CompanyProvider>
     );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    return <DashboardContent>{children}</DashboardContent>;
 }

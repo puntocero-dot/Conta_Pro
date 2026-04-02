@@ -21,8 +21,16 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ entries: [] });
         }
 
+        const { searchParams } = new URL(request.url);
+        const startDateParam = searchParams.get('startDate');
+        const endDateParam = searchParams.get('endDate');
+        const dateFilter = startDateParam && endDateParam ? {
+            gte: new Date(startDateParam + 'T00:00:00.000Z'),
+            lte: new Date(endDateParam + 'T23:59:59.999Z'),
+        } : undefined;
+
         const entries = await (prisma as any).journalEntry.findMany({
-            where: { companyId },
+            where: { companyId, ...(dateFilter ? { date: dateFilter } : {}) },
             include: {
                 lines: {
                     include: {
@@ -31,7 +39,7 @@ export async function GET(request: NextRequest) {
                 }
             },
             orderBy: { createdAt: 'desc' },
-            take: 50,
+            take: 200,
         });
 
         // Agrupar por transacción para mostrar una vista amigable

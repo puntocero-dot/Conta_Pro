@@ -1,0 +1,60 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.native {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: none;
+}
+
+.hexInput {
+    width: 120px !important;
+    font-family: monospace;
+    font-size: 0.875rem !important;
+}
+
+.swatches {
+    display: flex;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+}
+
+.swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.swatch:hover {
+    transform: scale(1.15);
+}
+
+.swatchActive {
+    border-color: var(--foreground);
+    transform: scale(1.1);
+}

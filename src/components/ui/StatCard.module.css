@@ -1,0 +1,81 @@
+.card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.card.income::before { background: var(--success); }
+.card.expense::before { background: var(--error); }
+.card.neutral::before { background: var(--primary); }
+
+.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.icon {
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+}
+
+.card.income .icon { color: var(--success); }
+.card.expense .icon { color: var(--error); }
+.card.neutral .icon { color: var(--primary); }
+
+.value {
+    font-size: 1.625rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--foreground);
+    line-height: 1.2;
+}
+
+.card.income .value { color: #059669; }
+.card.expense .value { color: #dc2626; }
+.card.neutral .value { color: var(--primary); }
+
+.delta {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 0.125rem;
+}
+
+.delta.positive { color: #059669; }
+.delta.negative { color: #dc2626; }
+.delta.neutral { color: var(--muted); }
+
+.arrow {
+    font-size: 0.875rem;
+    font-weight: 700;
+}

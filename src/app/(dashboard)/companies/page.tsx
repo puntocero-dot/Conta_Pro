@@ -238,9 +238,18 @@ export default function CompaniesPage() {
                                         </div>
                                     )}
                                 </div>
-                                <button onClick={() => handleSelectCompany(company.id)} className={styles.selectBtn}>
-                                    Gestionar Entidad
-                                </button>
+                                <div className={styles.cardActions}>
+                                    <button onClick={() => handleSelectCompany(company.id)} className={styles.selectBtn}>
+                                        Gestionar
+                                    </button>
+                                    <button
+                                        onClick={() => router.push(`/companies/${company.id}/settings`)}
+                                        className="btn btn-secondary"
+                                        title="Personalizar tema"
+                                    >
+                                        🎨 Personalizar
+                                    </button>
+                                </div>
                             </div>
                         ))
                     )}

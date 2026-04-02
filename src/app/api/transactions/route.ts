@@ -24,16 +24,31 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const transactions = await prisma.transaction.findMany({
-            where: { companyId },
-            include: {
-                category: true,
-            },
-            orderBy: { date: 'desc' },
-            take: 100,
-        });
+        const { searchParams } = new URL(request.url);
+        const startDateParam = searchParams.get('startDate');
+        const endDateParam = searchParams.get('endDate');
+        const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+        const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '100')));
 
-        return NextResponse.json({ transactions });
+        const dateFilter = startDateParam && endDateParam ? {
+            gte: new Date(startDateParam + 'T00:00:00.000Z'),
+            lte: new Date(endDateParam + 'T23:59:59.999Z'),
+        } : undefined;
+
+        const [transactions, total] = await Promise.all([
+            prisma.transaction.findMany({
+                where: { companyId, ...(dateFilter ? { date: dateFilter } : {}) },
+                include: { category: true },
+                orderBy: { date: 'desc' },
+                take: limit,
+                skip: (page - 1) * limit,
+            }),
+            prisma.transaction.count({
+                where: { companyId, ...(dateFilter ? { date: dateFilter } : {}) },
+            }),
+        ]);
+
+        return NextResponse.json({ transactions, total, page, limit });
     } catch (error) {
         console.error('Error in GET /api/transactions:', error);
         return apiError('Error al obtener transacciones', 500, error);
