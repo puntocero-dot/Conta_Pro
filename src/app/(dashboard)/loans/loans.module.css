@@ -1,0 +1,77 @@
+.loading { display: flex; justify-content: center; padding: 4rem; }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.statsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+
+.loanList { display: flex; flex-direction: column; gap: 1rem; }
+
+.loanCard {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition);
+}
+.loanCard:hover { box-shadow: var(--shadow); }
+.loanCard.closed { opacity: 0.6; }
+
+.loanHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.loanHeader h3 { margin: 0 0 0.25rem; font-size: 1.0625rem; }
+.loanDesc { font-size: 0.8125rem; color: var(--muted); margin: 0; }
+
+.statusBadge { padding: 0.25rem 0.625rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+.active { background: #f0fdf4; color: #059669; }
+.closedBadge { background: #f3f4f6; color: #6b7280; }
+
+.loanAmounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+.amtLabel { display: block; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-bottom: 0.125rem; }
+.amtValue { display: block; font-size: 1rem; font-weight: 700; }
+
+.red { color: #dc2626 !important; }
+.green { color: #059669 !important; }
+
+.progressBar { height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 0.375rem; }
+.progressFill { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.3s ease; }
+.progressLabel { font-size: 0.75rem; color: var(--muted); margin: 0 0 1rem; }
+
+.loanActions { display: flex; gap: 0.75rem; }
+
+.cuotaPreview {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: #1d4ed8;
+    margin-top: 0.75rem;
+}
+
+.paymentHint {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+    margin-bottom: 1rem;
+    color: var(--foreground);
+}
+
+.amortSummary { font-size: 0.875rem; color: var(--muted); margin-bottom: 1rem; }
+.amortTable { overflow-x: auto; max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.amortTable table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.amortTable th { background: #f8fafc; padding: 0.5rem 0.75rem; text-align: right; font-weight: 600; color: var(--muted); font-size: 0.6875rem; text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+.amortTable th:first-child { text-align: center; }
+.amortTable td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: right; }
+.amortTable td:first-child { text-align: center; color: var(--muted); font-weight: 600; }
+.lastRow td { font-weight: 700; background: #f0fdf4; }
+
+@media (max-width: 768px) {
+    .statsGrid, .loanAmounts { grid-template-columns: 1fr 1fr; }
+}

@@ -12,7 +12,8 @@ import { CompanySelector } from '@/components/ui/CompanySelector';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import {
     HomeIcon, SparklesIcon, BuildingIcon, UsersIcon,
-    WalletIcon, BarChartIcon, ShieldIcon, ClipboardIcon, LogOutIcon
+    WalletIcon, BarChartIcon, ShieldIcon, ClipboardIcon, LogOutIcon,
+    FileTextIcon, DollarSignIcon, AlertTriangleIcon
 } from '@/components/icons';
 import styles from './layout.module.css';
 
@@ -41,14 +42,20 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     };
 
     const menuItems = [
-        { path: '/dashboard', icon: <HomeIcon size={18} />, label: 'Dashboard', roles: ['all'] },
-        { path: '/invisible-ledger', icon: <SparklesIcon size={18} />, label: 'Bienestar Financiero', roles: ['all'] },
-        { path: '/companies', icon: <BuildingIcon size={18} />, label: 'Empresas', roles: ['all'] },
-        { path: '/clients', icon: <UsersIcon size={18} />, label: 'Clientes', roles: ['all'] },
-        { path: '/transactions', icon: <WalletIcon size={18} />, label: 'Transacciones', roles: ['all'] },
-        { path: '/reports', icon: <BarChartIcon size={18} />, label: 'Reportes', roles: ['all'] },
-        { path: '/security-dashboard', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN'] },
-        { path: '/security/audit-logs', icon: <ClipboardIcon size={18} />, label: 'Auditoría', roles: ['AUDITOR'] },
+        { path: '/dashboard', icon: <HomeIcon size={18} />, label: 'Dashboard', roles: ['all'], group: 'main' },
+        { path: '/transactions', icon: <WalletIcon size={18} />, label: 'Transacciones', roles: ['all'], group: 'main' },
+        { path: '/reports', icon: <BarChartIcon size={18} />, label: 'Reportes', roles: ['all'], group: 'main' },
+        { path: '/invisible-ledger', icon: <SparklesIcon size={18} />, label: 'Libro Contable', roles: ['all'], group: 'main' },
+        // ── Módulos laborales
+        { path: '/payroll', icon: <UsersIcon size={18} />, label: 'Planillas', roles: ['all'], group: 'labor' },
+        { path: '/provisions', icon: <AlertTriangleIcon size={18} />, label: 'Previsiones', roles: ['all'], group: 'labor' },
+        // ── Financiero
+        { path: '/loans', icon: <DollarSignIcon size={18} />, label: 'Préstamos', roles: ['all'], group: 'finance' },
+        // ── Administración
+        { path: '/companies', icon: <BuildingIcon size={18} />, label: 'Empresas', roles: ['all'], group: 'admin' },
+        { path: '/clients', icon: <FileTextIcon size={18} />, label: 'Clientes', roles: ['all'], group: 'admin' },
+        { path: '/security-dashboard', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN'], group: 'admin' },
+        { path: '/security/audit-logs', icon: <ClipboardIcon size={18} />, label: 'Auditoría', roles: ['AUDITOR'], group: 'admin' },
     ];
 
     const filteredMenu = menuItems.filter(item =>
@@ -60,6 +67,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             '/security/audit-logs': 'Registro de Auditoría',
             '/security/users': 'Gestión de Usuarios',
             '/security/alerts': 'Alertas de Seguridad',
+            '/payroll': 'Planillas',
+            '/loans': 'Préstamos',
+            '/provisions': 'Previsiones Laborales',
         };
         if (securityTitles[path]) return securityTitles[path];
         const item = menuItems.find(i => i.path === path || path.startsWith(i.path + '/'));
@@ -115,16 +125,30 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         <CompanySelector isCollapsed={!sidebarOpen} />
 
                         <nav className={styles.nav}>
-                            {filteredMenu.map(item => (
-                                <button
-                                    key={item.path}
-                                    onClick={() => handleNavClick(item.path)}
-                                    className={`${styles.navItem} ${pathname === item.path || pathname.startsWith(item.path + '/') ? styles.active : ''}`}
-                                    aria-current={pathname === item.path ? 'page' : undefined}
-                                >
-                                    <span className={styles.navIcon}>{item.icon}</span>
-                                    {sidebarOpen && <span>{item.label}</span>}
-                                </button>
+                            {filteredMenu.reduce<{ group: string; items: typeof filteredMenu }[]>((acc, item) => {
+                                const last = acc[acc.length - 1];
+                                if (!last || last.group !== item.group) acc.push({ group: item.group, items: [item] });
+                                else last.items.push(item);
+                                return acc;
+                            }, []).map(({ group, items }) => (
+                                <div key={group}>
+                                    {sidebarOpen && group !== 'main' && (
+                                        <p className={styles.navGroupLabel}>
+                                            {group === 'labor' ? 'LABORAL' : group === 'finance' ? 'FINANCIERO' : 'ADMINISTRACIÓN'}
+                                        </p>
+                                    )}
+                                    {items.map(item => (
+                                        <button
+                                            key={item.path}
+                                            onClick={() => handleNavClick(item.path)}
+                                            className={`${styles.navItem} ${pathname === item.path || pathname.startsWith(item.path + '/') ? styles.active : ''}`}
+                                            aria-current={pathname === item.path ? 'page' : undefined}
+                                        >
+                                            <span className={styles.navIcon}>{item.icon}</span>
+                                            {sidebarOpen && <span>{item.label}</span>}
+                                        </button>
+                                    ))}
+                                </div>
                             ))}
                         </nav>
 

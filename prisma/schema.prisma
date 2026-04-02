@@ -39,6 +39,9 @@ model Company {
   users          User[]          @relation("CompanyToUser")
   group          CompanyGroup?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
   members        CompanyMember[]
+  payrolls       Payroll[]
+  loans          Loan[]
+  provisions     Provision[]
 
   @@index([groupId])
 }
@@ -222,4 +225,138 @@ enum TransactionStatus {
   ACTIVE
   ANNULLED
   CORRECTED
+}
+
+// ─── PLANILLAS ──────────────────────────────────────────────────────────────
+
+model Payroll {
+  id                String           @id @default(uuid())
+  companyId         String
+  period            String           // "2025-01"
+  status            PayrollStatus    @default(DRAFT)
+  totalBruto        Float            @default(0)
+  totalNeto         Float            @default(0)
+  totalAFPLaboral   Float            @default(0)
+  totalAFPPatronal  Float            @default(0)
+  totalISSSLaboral  Float            @default(0)
+  totalISSSPatronal Float            @default(0)
+  totalINSAFORP     Float            @default(0)
+  totalISR          Float            @default(0)
+  totalCargaPatronal Float           @default(0)
+  notes             String?
+  transactionId     String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  company           Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employees         PayrollEmployee[]
+
+  @@index([companyId])
+  @@index([period])
+}
+
+model PayrollEmployee {
+  id              String   @id @default(uuid())
+  payrollId       String
+  clientId        String?
+  employeeName    String
+  dui             String?
+  nup             String?   // Número Único Previsional (AFP)
+  afpName         String?   // AFP Crecer / AFP Confía
+  salary          Float
+  otrosIngresos   Float    @default(0)
+  totalBruto      Float
+  afpLaboral      Float    // 7.25% del salario
+  isssLaboral     Float    // 3% del salario (max base $1,000)
+  isrRetencion    Float    // Retención ISR tabla progresiva
+  totalDescuentos Float
+  salarioNeto     Float
+  afpPatronal     Float    // 8.75% del salario
+  isssPatronal    Float    // 7.5% del salario (max base $1,000)
+  insaforp        Float    // 1% del salario (max base $1,000)
+  createdAt       DateTime @default(now())
+  payroll         Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([payrollId])
+}
+
+// ─── PRÉSTAMOS BANCARIOS ─────────────────────────────────────────────────────
+
+model Loan {
+  id              String        @id @default(uuid())
+  companyId       String
+  bankName        String
+  description     String?
+  originalAmount  Float
+  balance         Float
+  interestRate    Float         // tasa anual en porcentaje (ej: 8.5)
+  termMonths      Int
+  startDate       DateTime
+  status          LoanStatus    @default(ACTIVE)
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payments        LoanPayment[]
+
+  @@index([companyId])
+}
+
+model LoanPayment {
+  id              String   @id @default(uuid())
+  loanId          String
+  paymentDate     DateTime
+  totalPayment    Float
+  principal       Float
+  interest        Float
+  balance         Float    // saldo después del pago
+  transactionId   String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  loan            Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId])
+}
+
+// ─── PREVISIONES ─────────────────────────────────────────────────────────────
+
+model Provision {
+  id              String        @id @default(uuid())
+  companyId       String
+  type            ProvisionType
+  description     String
+  year            Int
+  month           Int
+  accruedAmount   Float         @default(0)  // devengado (no mueve caja)
+  paidAmount      Float         @default(0)  // pagado (mueve caja)
+  transactionId   String?       // cuando se paga
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([year, month])
+}
+
+// ─── NUEVOS ENUMS ────────────────────────────────────────────────────────────
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum LoanStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum ProvisionType {
+  VACATION       // Vacaciones (15 días + 30% recargo)
+  AGUINALDO      // Aguinaldo (10-18 días según antigüedad)
+  INDEMNIZACION  // Indemnización (15 días/año de servicio)
+  BONO_SEMESTRAL // Bono semestral empresarial
+  OTHER          // Otras previsiones
 }

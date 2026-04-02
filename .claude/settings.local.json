@@ -6,7 +6,10 @@
       "Bash(1:*)",
       "Bash(npx tsc:*)",
       "Bash(ls \"C:\\\\Users\\\\DELL\\\\Desktop\\\\Proyectos\\\\Conta_2go\\\\src\\\\app\\\\\\(dashboard\\)\\\\security\")",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(node -e \":*)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\DELL\\\\Desktop\\\\Proyectos\\\\Conta_2go\\\\src\\\\app\\\\api\\\\payroll\\\\[id]\\\\employees\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\DELL\\\\Desktop\\\\Proyectos\\\\Conta_2go\\\\src\\\\app\\\\api\\\\payroll\\\\[id]\\\\approve\")"
     ]
   }
 }

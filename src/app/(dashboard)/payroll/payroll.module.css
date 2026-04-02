@@ -1,0 +1,205 @@
+.loading {
+    display: flex;
+    justify-content: center;
+    padding: 4rem;
+}
+.spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Payroll list */
+.payrollList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.payrollCard {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: box-shadow var(--transition);
+}
+.payrollCard:hover { box-shadow: var(--shadow); }
+
+.cardMain { flex: 1; min-width: 0; }
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
+}
+
+.period {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0 0 0.125rem;
+}
+
+.empCount {
+    font-size: 0.8125rem;
+    color: var(--muted);
+}
+
+.badge {
+    padding: 0.25rem 0.625rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.cardAmounts {
+    display: flex;
+    gap: 2rem;
+}
+
+.amount { display: flex; flex-direction: column; gap: 0.125rem; }
+.amountLabel { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.amountValue { font-size: 1rem; font-weight: 700; color: var(--foreground); }
+
+.cardActions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.green { color: #059669 !important; }
+.red { color: #dc2626 !important; }
+.orange { color: #d97706 !important; }
+
+/* New payroll modal */
+.employeesSection { margin: 1.5rem 0; }
+.employeesHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.employeesHeader h4 { margin: 0; font-size: 0.9375rem; }
+
+.employeeRow {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.empFields {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.empPreview {
+    min-width: 180px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.previewItem {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.previewTotal {
+    border-top: 1px solid var(--border);
+    padding-top: 0.375rem;
+    margin-top: 0.25rem;
+    font-weight: 700;
+    color: #059669 !important;
+}
+.previewTotal span { color: #059669 !important; }
+
+/* Totals */
+.totalsSummary {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-top: 1rem;
+}
+.totalsSummary h4 { margin: 0 0 1rem; font-size: 0.875rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.totalsGrid { display: flex; flex-direction: column; gap: 0.375rem; }
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    color: var(--foreground);
+}
+.highlighted { font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.375rem; margin-top: 0.25rem; }
+.grand {
+    background: var(--primary);
+    color: white !important;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    margin-top: 0.5rem;
+}
+.grand span, .grand strong { color: white !important; font-size: 0.9375rem; }
+
+/* Detail modal */
+.detailGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+.detailBox {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.875rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.detailLabel { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; color: var(--muted); }
+.detailValue { font-size: 1.0625rem; font-weight: 700; }
+
+.employeeTable h4 { margin: 0 0 0.75rem; font-size: 0.9375rem; }
+.tableWrapper { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+.tableWrapper table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.tableWrapper th { background: #f8fafc; padding: 0.625rem 0.875rem; text-align: left; font-weight: 600; color: var(--muted); font-size: 0.6875rem; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.tableWrapper td { padding: 0.625rem 0.875rem; border-bottom: 1px solid #f1f5f9; }
+.tableWrapper tr:last-child td { border-bottom: none; }
+
+@media (max-width: 768px) {
+    .statsGrid { grid-template-columns: 1fr; }
+    .payrollCard { flex-direction: column; align-items: flex-start; }
+    .cardAmounts { flex-wrap: wrap; gap: 1rem; }
+    .detailGrid { grid-template-columns: repeat(2, 1fr); }
+    .empFields { grid-template-columns: 1fr; }
+    .employeeRow { flex-direction: column; }
+}
