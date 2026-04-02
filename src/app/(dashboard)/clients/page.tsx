@@ -76,6 +76,37 @@ export default function ClientsPage() {
 
     const totalBalance = clients.reduce((sum, c) => sum + (c.balance ?? 0), 0);
 
+    const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !activeCompanyId) return;
+
+        const { parseCSV, MAPPINGS } = await import('@/lib/csv-helper');
+        try {
+            const data = await parseCSV<any>(file, MAPPINGS.CLIENT);
+            if (data.length === 0) return;
+
+            const res = await fetch('/api/clients/bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-company-id': activeCompanyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ clients: data }),
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+                showToast(`Se cargaron ${result.count} contactos correctamente`, 'success');
+                fetchClients();
+            } else {
+                showToast('Error en la carga masiva', 'error');
+            }
+        } catch (error) {
+            showToast('Error al procesar el archivo CSV', 'error');
+        }
+    };
+
     if (companyLoading || (loading && clients.length === 0 && activeCompanyId)) {
         return (
             <div>
@@ -95,9 +126,15 @@ export default function ClientsPage() {
                     <h1 style={{ marginBottom: '0.25rem' }}>Clientes</h1>
                     <p>Gestión de cartera y contactos</p>
                 </div>
-                <button onClick={() => setShowNewModal(true)} className="btn btn-primary" disabled={!activeCompanyId}>
-                    <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                        📁 Carga Masiva
+                        <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkImport} />
+                    </label>
+                    <button onClick={() => setShowNewModal(true)} className="btn btn-primary" disabled={!activeCompanyId}>
+                        <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
+                    </button>
+                </div>
             </div>
 
             {!activeCompanyId ? (

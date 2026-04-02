@@ -40,6 +40,37 @@ export default function TransactionsPage() {
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [annullingId, setAnnullingId] = useState<string | null>(null);
 
+    const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !activeCompanyId) return;
+
+        const { parseCSV, MAPPINGS } = await import('@/lib/csv-helper');
+        try {
+            const data = await parseCSV<any>(file, MAPPINGS.TRANSACTION);
+            if (data.length === 0) return;
+
+            const res = await fetch('/api/transactions/bulk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-company-id': activeCompanyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ transactions: data }),
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+                showToast(`Se cargaron ${result.count} transacciones correctamente`, 'success');
+                fetchTransactions();
+            } else {
+                showToast('Error en la carga masiva', 'error');
+            }
+        } catch (error) {
+            showToast('Error al procesar el archivo CSV', 'error');
+        }
+    };
+
     const fetchTransactions = useCallback(async () => {
         if (!activeCompanyId) return;
         setLoading(true);
@@ -97,13 +128,19 @@ export default function TransactionsPage() {
                 title="Transacciones"
                 subtitle={transactions.length > 0 ? `${transactions.length} operaciones en el período` : 'Historial financiero y control de caja'}
             >
-                <button
-                    onClick={() => setShowNewModal(true)}
-                    className="btn btn-primary"
-                    disabled={!activeCompanyId}
-                >
-                    <PlusIcon size={16} /> Nueva Transacción
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                        📁 Carga Masiva
+                        <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkImport} />
+                    </label>
+                    <button
+                        onClick={() => setShowNewModal(true)}
+                        className="btn btn-primary"
+                        disabled={!activeCompanyId}
+                    >
+                        <PlusIcon size={16} /> Nueva Transacción
+                    </button>
+                </div>
             </PageHeader>
 
             {!activeCompanyId ? (

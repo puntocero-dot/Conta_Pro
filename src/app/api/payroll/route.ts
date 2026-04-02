@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
                 employees: {
                     create: calculated.map((e: ReturnType<typeof calcEmployee>) => ({
                         employeeName: e.employeeName,
+                        jobTitle: e.jobTitle,
+                        employeeNumber: e.employeeNumber,
                         dui: e.dui,
                         nup: e.nup,
                         afpName: e.afpName,

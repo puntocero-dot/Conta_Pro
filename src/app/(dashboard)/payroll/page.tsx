@@ -33,6 +33,8 @@ interface Payroll {
 interface PayrollEmployee {
     id: string;
     employeeName: string;
+    jobTitle?: string;
+    employeeNumber?: string;
     dui?: string;
     nup?: string;
     afpName?: string;
@@ -234,6 +236,7 @@ export default function PayrollPage() {
                     onClose={() => setShowNewModal(false)}
                     onSuccess={(msg) => { setShowNewModal(false); fetchPayrolls(); showToast(msg, 'success'); }}
                     onError={(msg) => showToast(msg, 'error')}
+                    showToast={showToast}
                 />
             )}
 
@@ -251,11 +254,12 @@ export default function PayrollPage() {
 
 // ── New Payroll Modal ──────────────────────────────────────────────────────────
 
-function NewPayrollModal({ companyId, onClose, onSuccess, onError }: {
+function NewPayrollModal({ companyId, onClose, onSuccess, onError, showToast }: {
     companyId: string;
     onClose: () => void;
     onSuccess: (msg: string) => void;
     onError: (msg: string) => void;
+    showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }) {
     const now = new Date();
     const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -263,14 +267,35 @@ function NewPayrollModal({ companyId, onClose, onSuccess, onError }: {
     const [period, setPeriod] = useState(defaultPeriod);
     const [notes, setNotes] = useState('');
     const [employees, setEmployees] = useState<PayrollEmployeeInput[]>([
-        { employeeName: '', salary: 0, otrosIngresos: 0 },
+        { employeeName: '', jobTitle: '', employeeNumber: '', salary: 0, otrosIngresos: 0 },
     ]);
     const [submitting, setSubmitting] = useState(false);
 
-    const addEmployee = () => setEmployees(prev => [...prev, { employeeName: '', salary: 0, otrosIngresos: 0 }]);
+    const addEmployee = () => setEmployees(prev => [...prev, { employeeName: '', jobTitle: '', employeeNumber: '', salary: 0, otrosIngresos: 0 }]);
     const removeEmployee = (i: number) => setEmployees(prev => prev.filter((_, idx) => idx !== i));
     const updateEmployee = (i: number, field: keyof PayrollEmployeeInput, value: string | number) =>
         setEmployees(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: value } : e));
+
+    const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        const { parseCSV, MAPPINGS } = await import('@/lib/csv-helper');
+        try {
+            const data = await parseCSV<PayrollEmployeeInput>(file, MAPPINGS.EMPLOYEE);
+            const sanitized = data.map(emp => ({
+                ...emp,
+                salary: Number(emp.salary) || 0,
+                otrosIngresos: Number(emp.otrosIngresos) || 0
+            }));
+            if (sanitized.length > 0) {
+                setEmployees(sanitized);
+                showToast(`Se cargaron ${sanitized.length} empleados`, 'success');
+            }
+        } catch {
+            showToast('Error al procesar el archivo CSV', 'error');
+        }
+    };
 
     // Live preview
     const previews = employees.map(e => {
@@ -315,9 +340,15 @@ function NewPayrollModal({ companyId, onClose, onSuccess, onError }: {
                 <div className={styles.employeesSection}>
                     <div className={styles.employeesHeader}>
                         <h4>Empleados</h4>
-                        <button type="button" onClick={addEmployee} className="btn btn-secondary" style={{ fontSize: '0.8125rem' }}>
-                            <PlusIcon size={14} /> Agregar
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <label className="btn btn-secondary" style={{ fontSize: '0.8125rem', cursor: 'pointer' }}>
+                                📁 Carga Masiva
+                                <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImportCSV} />
+                            </label>
+                            <button type="button" onClick={addEmployee} className="btn btn-primary" style={{ fontSize: '0.8125rem' }}>
+                                <PlusIcon size={14} /> Agregar
+                            </button>
+                        </div>
                     </div>
 
                     {employees.map((emp, i) => (
@@ -326,6 +357,14 @@ function NewPayrollModal({ companyId, onClose, onSuccess, onError }: {
                                 <div className="form-group" style={{ gridColumn: 'span 2' }}>
                                     <label className="label">Nombre completo</label>
                                     <input type="text" className="input" value={emp.employeeName} onChange={e => updateEmployee(i, 'employeeName', e.target.value)} placeholder="Juan Pérez" required />
+                                </div>
+                                <div className="form-group">
+                                    <label className="label">Cargo</label>
+                                    <input type="text" className="input" value={emp.jobTitle || ''} onChange={e => updateEmployee(i, 'jobTitle', e.target.value)} placeholder="Contador, etc." />
+                                </div>
+                                <div className="form-group">
+                                    <label className="label">No. Empleado</label>
+                                    <input type="text" className="input" value={emp.employeeNumber || ''} onChange={e => updateEmployee(i, 'employeeNumber', e.target.value)} placeholder="EMP-001" />
                                 </div>
                                 <div className="form-group">
                                     <label className="label">Salario mensual ($)</label>
@@ -453,6 +492,7 @@ function PayrollDetailModal({ payroll, onClose, onApprove, approving }: {
                             <thead>
                                 <tr>
                                     <th>Empleado</th>
+                                    <th>Cargo</th>
                                     <th>Bruto</th>
                                     <th>AFP Lab.</th>
                                     <th>ISSS Lab.</th>
@@ -464,7 +504,13 @@ function PayrollDetailModal({ payroll, onClose, onApprove, approving }: {
                             <tbody>
                                 {p.employees.map(e => (
                                     <tr key={e.id}>
-                                        <td>{e.employeeName}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <strong>{e.employeeName}</strong>
+                                                <small style={{ opacity: 0.6 }}>{e.employeeNumber || 's/n'} - {e.jobTitle || 'Sin cargo'}</small>
+                                            </div>
+                                        </td>
+                                        <td>{e.jobTitle || '-'}</td>
                                         <td>{formatCurrency(e.totalBruto)}</td>
                                         <td className={styles.red}>{formatCurrency(e.afpLaboral)}</td>
                                         <td className={styles.red}>{formatCurrency(e.isssLaboral)}</td>

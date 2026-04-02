@@ -259,6 +259,8 @@ model PayrollEmployee {
   payrollId       String
   clientId        String?
   employeeName    String
+  jobTitle        String?
+  employeeNumber  String?
   dui             String?
   nup             String?   // Número Único Previsional (AFP)
   afpName         String?   // AFP Crecer / AFP Confía

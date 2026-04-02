@@ -52,6 +52,8 @@ export function calcISRMensual(salarioBrutoMensual: number): number {
 
 export interface PayrollEmployeeInput {
     employeeName: string;
+    jobTitle?: string;
+    employeeNumber?: string;
     dui?: string;
     nup?: string;
     afpName?: string;
@@ -62,6 +64,8 @@ export interface PayrollEmployeeInput {
 
 export interface PayrollEmployeeCalc {
     employeeName: string;
+    jobTitle?: string;
+    employeeNumber?: string;
     dui?: string;
     nup?: string;
     afpName?: string;
@@ -108,6 +112,8 @@ export function calcEmployee(input: PayrollEmployeeInput): PayrollEmployeeCalc {
 
     return {
         employeeName: input.employeeName,
+        jobTitle: input.jobTitle,
+        employeeNumber: input.employeeNumber,
         dui: input.dui,
         nup: input.nup,
         afpName: input.afpName,
