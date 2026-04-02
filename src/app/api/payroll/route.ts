@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
 
         // Calculate employees
         const calculated = employeesInput.map((e: PayrollEmployeeInput) => calcEmployee(e));
-        const totals = calcPayrollTotals(calculated);
+        const { costoTotalPlanilla, ...payrollTotals } = calcPayrollTotals(calculated);
 
         const payroll = await prisma.payroll.create({
             data: {
                 companyId,
                 period,
                 notes,
-                ...totals,
+                ...payrollTotals,
                 employees: {
                     create: calculated.map((e: ReturnType<typeof calcEmployee>) => ({
                         employeeName: e.employeeName,

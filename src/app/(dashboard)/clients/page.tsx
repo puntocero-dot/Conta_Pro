@@ -31,6 +31,9 @@ export default function ClientsPage() {
     const [filter, setFilter] = useState<'ALL' | 'INDIVIDUAL' | 'COMPANY'>('ALL');
     const [roleFilter, setRoleFilter] = useState<'ALL' | 'CLIENT' | 'SUPPLIER' | 'BOTH'>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const [editingClient, setEditingClient] = useState<Client | null>(null);
+    const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
     const fetchClients = useCallback(async () => {
         if (!activeCompanyId) return;
@@ -176,13 +179,45 @@ export default function ClientsPage() {
                                             <p>Saldo</p>
                                             <h4 className={(client.balance ?? 0) > 0 ? styles.positive : ''}>{formatCurrency(client.balance ?? 0)}</h4>
                                         </div>
-                                        <button className="btn btn-ghost" style={{ fontSize: '1.25rem' }} aria-label="Opciones">⋮</button>
+                                        <div style={{ position: 'relative' }}>
+                                            <button 
+                                                className="btn btn-ghost" 
+                                                style={{ fontSize: '1.25rem', padding: '0.25rem 0.5rem' }} 
+                                                aria-label="Opciones"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveMenuId(activeMenuId === client.id ? null : client.id);
+                                                }}
+                                            >
+                                                ⋮
+                                            </button>
+                                            
+                                            {activeMenuId === client.id && (
+                                                <div className={styles.dropdownMenu}>
+                                                    <button onClick={() => { setEditingClient(client); setActiveMenuId(null); }}>✏️ Editar</button>
+                                                    <button 
+                                                        className={styles.deleteOption} 
+                                                        onClick={() => { setDeletingClient(client); setActiveMenuId(null); }}
+                                                    >
+                                                        🗑️ Eliminar
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 ))
                             )}
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Click-away listener for dropdown */}
+            {activeMenuId && (
+                <div 
+                    style={{ position: 'fixed', inset: 0, zIndex: 40 }} 
+                    onClick={() => setActiveMenuId(null)} 
+                />
             )}
 
             {showNewModal && activeCompanyId && (
@@ -192,12 +227,180 @@ export default function ClientsPage() {
                     onSuccess={() => {
                         setShowNewModal(false);
                         fetchClients();
-                        showToast('Cliente registrado correctamente', 'success');
+                        showToast('Contacto registrado correctamente', 'success');
                     }}
                     onError={msg => showToast(msg, 'error')}
                 />
             )}
+
+            {editingClient && activeCompanyId && (
+                <EditClientModal
+                    client={editingClient}
+                    companyId={activeCompanyId}
+                    onClose={() => setEditingClient(null)}
+                    onSuccess={() => {
+                        setEditingClient(null);
+                        fetchClients();
+                        showToast('Contacto actualizado', 'success');
+                    }}
+                    onError={msg => showToast(msg, 'error')}
+                />
+            )}
+
+            {deletingClient && (
+                <Modal 
+                    isOpen={true} 
+                    onClose={() => setDeletingClient(null)} 
+                    title="Confirmar Eliminación"
+                    size="sm"
+                >
+                    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                        <p style={{ marginBottom: '1.5rem', opacity: 0.8 }}>
+                            ¿Estás seguro que deseas eliminar a <strong>{deletingClient.name}</strong>? 
+                            Esta acción no se puede deshacer.
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingClient(null)}>Cancelar</button>
+                            <button 
+                                className="btn btn-error" 
+                                style={{ flex: 1, backgroundColor: 'var(--error)', color: 'white' }}
+                                onClick={async () => {
+                                    try {
+                                        const res = await fetch(`/api/clients/${deletingClient.id}`, { 
+                                            method: 'DELETE',
+                                            headers: {
+                                                'x-company-id': activeCompanyId!,
+                                                'X-Requested-With': 'XMLHttpRequest'
+                                            }
+                                        });
+                                        if (res.ok) {
+                                            setDeletingClient(null);
+                                            fetchClients();
+                                            showToast('Contacto eliminado', 'success');
+                                        } else {
+                                            showToast('Error al eliminar contacto', 'error');
+                                        }
+                                    } catch {
+                                        showToast('Error de conexión', 'error');
+                                    }
+                                }}
+                            >
+                                Sí, Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
         </div>
+    );
+}
+
+function EditClientModal({
+    client,
+    companyId,
+    onClose,
+    onSuccess,
+    onError,
+}: {
+    client: Client;
+    companyId: string;
+    onClose: () => void;
+    onSuccess: () => void;
+    onError: (msg: string) => void;
+}) {
+    const [formData, setFormData] = useState({
+        type: client.type,
+        name: client.name,
+        email: client.email || '',
+        phone: client.phone || '',
+        nit: client.nit || '',
+        dui: client.dui || '',
+        address: client.address || '',
+        role: client.role,
+    });
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const res = await fetch(`/api/clients/${client.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-company-id': companyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(formData),
+            });
+            if (res.ok) {
+                onSuccess();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                onError(data.error || 'Error al actualizar cliente');
+            }
+        } catch {
+            onError('Error de conexión');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <Modal isOpen onClose={onClose} title="Editar Contacto" size="md">
+            <form onSubmit={handleSubmit}>
+                <div className={styles.typeButtons} style={{ marginBottom: '1.25rem' }}>
+                    <button type="button" className={formData.type === 'INDIVIDUAL' ? styles.typeActive : ''} onClick={() => setFormData(p => ({ ...p, type: 'INDIVIDUAL' }))}>👤 Persona Natural</button>
+                    <button type="button" className={formData.type === 'COMPANY' ? styles.typeActive : ''} onClick={() => setFormData(p => ({ ...p, type: 'COMPANY' }))}>🏢 Empresa</button>
+                </div>
+
+                <div className="form-group">
+                    <label className="label">Función en el Negocio</label>
+                    <select className="input" value={formData.role} onChange={e => setFormData(p => ({ ...p, role: e.target.value as any }))}>
+                        <option value="CLIENT">Cliente (recibo pagos)</option>
+                        <option value="SUPPLIER">Proveedor (realizo pagos)</option>
+                        <option value="BOTH">Ambos</option>
+                    </select>
+                </div>
+
+                <div className="form-group">
+                    <label className="label">Nombre o Razón Social</label>
+                    <input type="text" required className="input" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="Ej: Juan Pérez / Empresa S.A." />
+                </div>
+
+                <div className={styles.formRow}>
+                    <div className="form-group">
+                        <label className="label">Correo</label>
+                        <input type="email" className="input" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="correo@ejemplo.com" />
+                    </div>
+                    <div className="form-group">
+                        <label className="label">Teléfono</label>
+                        <input type="tel" className="input" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} placeholder="7222-6244" />
+                    </div>
+                </div>
+
+                <div className="form-group">
+                    <label className="label">{formData.type === 'INDIVIDUAL' ? 'DUI' : 'NIT'}</label>
+                    {formData.type === 'INDIVIDUAL' ? (
+                        <input type="text" className="input" value={formData.dui} onChange={e => setFormData(p => ({ ...p, dui: e.target.value }))} placeholder="01234567-8" maxLength={10} />
+                    ) : (
+                        <input type="text" className="input" value={formData.nit} onChange={e => setFormData(p => ({ ...p, nit: e.target.value }))} placeholder="0614-210188-101-2" />
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label className="label">Dirección</label>
+                    <textarea className="input" value={formData.address} onChange={e => setFormData(p => ({ ...p, address: e.target.value }))} placeholder="Calle Principal #123, San Salvador" rows={2} />
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                    <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                    <button type="submit" disabled={submitting} className="btn btn-primary" style={{ flex: 2 }}>
+                        {submitting ? 'Guardar Cambios...' : 'Actualizar Contacto'}
+                    </button>
+                </div>
+            </form>
+        </Modal>
     );
 }
 

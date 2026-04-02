@@ -1,10 +1,10 @@
-# 🏦 Patrimonium Pro (Conta2Go) — Sistema Contable de Nivel Bancario
+# 🏦 Conta Pro — Sistema Contable de Nivel Bancario
 
 > **Estado del Proyecto:** ✅ PRODUCCIÓN READY - DEMO READY  
 > **Versión:** 2.1.0  
 > **Países Soportados:** 🇸🇻 SV, 🇬🇹 GT, 🇭🇳 HN, 🇳🇮 NI, 🇨🇷 CR, 🇵🇦 PA
 
-**Patrimonium Pro** (conocido localmente como **Conta2go**) es una super app de contabilidad empresarial con seguridad de nivel bancario, diseñada específicamente para la legislación de El Salvador y Centroamérica. Es una solución todo-en-uno que integra CRM, Contabilidad Invisible, y Reportes Fiscales con los más altos estándares de protección de datos.
+**Conta Pro** (conocido anteriormente como **Patrimonium Pro**) es una super app de contabilidad empresarial con seguridad de nivel bancario, diseñada específicamente para la legislación de El Salvador y Centroamérica. Es una solución todo-en-uno que integra CRM, Contabilidad Invisible, y Reportes Fiscales con los más altos estándares de protección de datos.
 
 ---
 
@@ -118,5 +118,5 @@ Para ver detalles técnicos específicos, consulta la carpeta `/docs`:
 
 ---
 
-**🔒 Patrimonium Pro** — *Innovación contable con seguridad absoluta.*  
+**🔒 Conta Pro** — *Innovación contable con seguridad absoluta.*  
 © 2026 Todos los derechos reservados.
