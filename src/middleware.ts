@@ -5,35 +5,71 @@ import { verifyTokenEdge } from '@/lib/auth/jwt-edge';
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // 1. Definir rutas protegidas
-    const isDashboardRoute = pathname.startsWith('/dashboard') ||
+    // 1. CSRF protection: peticiones mutantes a la API deben incluir X-Requested-With
+    if (
+        pathname.startsWith('/api/') &&
+        ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)
+    ) {
+        // Excluir rutas públicas de auth (login/register no usan el header)
+        const isPublicAuthRoute =
+            pathname === '/api/auth/login' ||
+            pathname === '/api/auth/register' ||
+            pathname === '/api/auth/logout';
+
+        if (!isPublicAuthRoute) {
+            const requestedWith = request.headers.get('X-Requested-With');
+            if (requestedWith !== 'XMLHttpRequest') {
+                return NextResponse.json(
+                    { error: 'Solicitud no autorizada' },
+                    { status: 403 }
+                );
+            }
+        }
+    }
+
+    // 2. Definir rutas protegidas
+    const isDashboardRoute =
+        pathname.startsWith('/dashboard') ||
         pathname.startsWith('/companies') ||
         pathname.startsWith('/clients') ||
         pathname.startsWith('/transactions') ||
         pathname.startsWith('/reports') ||
         pathname.startsWith('/invisible-ledger') ||
-        pathname.startsWith('/security-dashboard');
+        pathname.startsWith('/security-dashboard') ||
+        pathname.startsWith('/security');
 
     const isPublicRoute = pathname === '/login' || pathname === '/register';
 
-    // 2. Obtener token de la cookie
-    const token = request.cookies.get('conta2go_token')?.value;
+    // 3. Obtener token de la cookie
+    const token = request.cookies.get('contapro_token')?.value;
     const auth = token ? await verifyTokenEdge(token) : null;
 
-    // 3. Redirección si no está autenticado
+    // 4. Redirección si no está autenticado
     if (isDashboardRoute && !auth) {
         const url = new URL('/login', request.url);
         url.searchParams.set('from', pathname);
         return NextResponse.redirect(url);
     }
 
-    // 4. Redirección si ya está autenticado e intenta ir a login/register
+    // 5. Redirección si ya está autenticado e intenta ir a login/register
     if (isPublicRoute && auth) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    // 5. RBAC Básico: Solo SUPER_ADMIN entra a security-dashboard
-    if (pathname.startsWith('/security-dashboard') && auth?.role !== 'SUPER_ADMIN') {
+    // 6. RBAC: Solo SUPER_ADMIN accede a security-dashboard, users y alerts
+    //    AUDITOR puede acceder a audit-logs
+    const isAuditLogsPage = pathname.startsWith('/security/audit-logs');
+    const isRestrictedSecurityPage =
+        pathname.startsWith('/security-dashboard') ||
+        pathname.startsWith('/security/users') ||
+        pathname.startsWith('/security/alerts') ||
+        (pathname.startsWith('/security') && !isAuditLogsPage);
+
+    if (isRestrictedSecurityPage && auth?.role !== 'SUPER_ADMIN') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
+    if (isAuditLogsPage && auth?.role !== 'SUPER_ADMIN' && auth?.role !== 'AUDITOR') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
@@ -46,7 +82,14 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.pwnedpasswords.com;"
+        [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+            "img-src 'self' blob: data:",
+            "font-src 'self' https://fonts.gstatic.com",
+            "connect-src 'self' https://api.pwnedpasswords.com",
+        ].join('; ')
     );
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 

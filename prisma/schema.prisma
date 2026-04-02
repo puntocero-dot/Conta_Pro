@@ -9,30 +9,64 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  passwordHash String
-  role         Role       @default(CLIENTE)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  auditLogs    AuditLog[]
-  companies    Company[]  @relation("CompanyToUser")
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String
+  role           Role            @default(CLIENTE)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  auditLogs      AuditLog[]
+  companies      Company[]       @relation("CompanyToUser")
+  companyGroups  CompanyGroup[]
+  companyMembers CompanyMember[]
 }
 
 model Company {
-  id             String         @id @default(uuid())
+  id             String          @id @default(uuid())
   name           String
-  taxId          String         @unique
+  taxId          String          @unique
   country        String
   metadata       Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  groupId        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   accounts       Account[]
   categories     Category[]
   journalEntries JournalEntry[]
   transactions   Transaction[]
   clients        AccountClient[]
-  users          User[]         @relation("CompanyToUser")
+  auditLogs      AuditLog[]
+  users          User[]          @relation("CompanyToUser")
+  group          CompanyGroup?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  members        CompanyMember[]
+
+  @@index([groupId])
+}
+
+model CompanyGroup {
+  id        String    @id @default(uuid())
+  name      String
+  ownerId   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  owner     User      @relation(fields: [ownerId], references: [id])
+  companies Company[]
+
+  @@index([ownerId])
+}
+
+model CompanyMember {
+  id        String   @id @default(uuid())
+  userId    String
+  companyId String
+  role      Role     @default(CLIENTE)
+  joinedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@index([userId])
 }
 
 model AccountClient {
@@ -69,6 +103,7 @@ model Category {
 model Transaction {
   id          String          @id @default(uuid())
   type        TransactionType
+  status      TransactionStatus @default(ACTIVE)
   amount      Float
   description String
   date        DateTime
@@ -93,6 +128,7 @@ model AuditLog {
   id          String   @id @default(uuid())
   timestamp   DateTime @default(now())
   userId      String?
+  companyId   String?
   action      String
   resource    String
   resourceId  String?
@@ -104,6 +140,10 @@ model AuditLog {
   result      String
   metadata    Json?
   user        User?    @relation(fields: [userId], references: [id])
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([userId])
 }
 
 model Account {
@@ -176,4 +216,10 @@ enum CounterpartyType {
   CLIENT
   SUPPLIER
   BOTH
+}
+
+enum TransactionStatus {
+  ACTIVE
+  ANNULLED
+  CORRECTED
 }

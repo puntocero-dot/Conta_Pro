@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
 import { LedgerService } from '@/lib/accounting/ledger';
+import { apiError } from '@/lib/api/error-response';
+import { requirePermission } from '@/lib/auth/authorize';
 
 export async function GET(request: NextRequest) {
     try {
@@ -9,6 +11,9 @@ export async function GET(request: NextRequest) {
         if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
+
+        const permError = requirePermission(auth.role, 'transaction:read');
+        if (permError) return permError;
 
         const companyId = await getCompanyIdFromRequest(request, auth.userId);
 
@@ -29,12 +34,9 @@ export async function GET(request: NextRequest) {
         });
 
         return NextResponse.json({ transactions });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error in GET /api/transactions:', error);
-        return NextResponse.json(
-            { error: 'Error al obtener transacciones', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error al obtener transacciones', 500, error);
     }
 }
 
@@ -44,6 +46,9 @@ export async function POST(request: NextRequest) {
         if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
+
+        const permError = requirePermission(auth.role, 'transaction:create');
+        if (permError) return permError;
 
         const body = await request.json();
         const { type, amount, description, date, categoryId, clientId } = body;
@@ -119,11 +124,8 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ transaction }, { status: 201 });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error in POST /api/transactions:', error);
-        return NextResponse.json(
-            { error: 'Error al crear transacción', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error al crear transacción', 500, error);
     }
 }

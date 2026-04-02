@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma:*)",
+      "Bash(2)",
+      "Bash(1:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls \"C:\\\\Users\\\\DELL\\\\Desktop\\\\Proyectos\\\\Conta_2go\\\\src\\\\app\\\\\\(dashboard\\)\\\\security\")",
+      "Bash(npm run:*)"
+    ]
+  }
+}

@@ -153,6 +153,170 @@
     gap: 0.5rem;
 }
 
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.tab {
+    padding: 0.625rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab:hover {
+    color: #1e293b;
+}
+
+.tabActive {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* Groups */
+.groupCard {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.groupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+}
+
+.groupTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.groupActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.groupCompanies {
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.groupCompanyChip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 100px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1d4ed8;
+}
+
+.removeChipBtn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #93c5fd;
+    font-size: 0.875rem;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.removeChipBtn:hover {
+    color: #1d4ed8;
+}
+
+.emptyGroup {
+    padding: 1rem 1.5rem;
+    font-size: 0.8125rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* Members */
+.memberRow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.memberRow:last-child {
+    border-bottom: none;
+}
+
+.memberAvatar {
+    width: 36px;
+    height: 36px;
+    background: #e0f2fe;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #0369a1;
+    flex-shrink: 0;
+}
+
+.memberInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.memberEmail {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.memberRole {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.125rem;
+}
+
+.roleBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    background: #f1f5f9;
+    border-radius: 100px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .loading {
     display: flex;
     flex-direction: column;

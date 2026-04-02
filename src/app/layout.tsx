@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Conta2Go - Contabilidad Nivel Bancario",
-  description: "Sistema de contabilidad con seguridad de nivel bancario",
+  title: "Conta Pro - Contabilidad Profesional",
+  description: "Sistema de contabilidad profesional con seguridad de nivel bancario para El Salvador",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>

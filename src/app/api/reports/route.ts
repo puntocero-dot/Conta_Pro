@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
+import { apiError } from '@/lib/api/error-response';
 
 export async function GET(request: NextRequest) {
     try {
@@ -97,11 +98,8 @@ export async function GET(request: NextRequest) {
             transactionCount: transactions.length,
             byCategory,
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error generating report:', error);
-        return NextResponse.json(
-            { error: 'Error al generar reporte financiero', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error al generar reporte financiero', 500, error);
     }
 }

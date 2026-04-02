@@ -3,9 +3,16 @@ import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const TOKEN_EXPIRY = '7d';
-const COOKIE_NAME = 'conta2go_token';
+const COOKIE_NAME = 'contapro_token';
+
+function getJwtSecret(): string {
+    const secret = process.env.JWT_SECRET;
+    if (!secret || secret.length < 32) {
+        throw new Error('JWT_SECRET env var debe estar definido y tener al menos 32 caracteres');
+    }
+    return secret;
+}
 
 export interface AuthPayload {
     userId: string;
@@ -17,7 +24,7 @@ export interface AuthPayload {
  * Genera un JWT firmado con los datos del usuario
  */
 export function generateToken(payload: AuthPayload): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    return jwt.sign(payload, getJwtSecret(), { expiresIn: TOKEN_EXPIRY });
 }
 
 /**
@@ -25,7 +32,7 @@ export function generateToken(payload: AuthPayload): string {
  */
 export function verifyToken(token: string): AuthPayload | null {
     try {
-        return jwt.verify(token, JWT_SECRET) as AuthPayload;
+        return jwt.verify(token, getJwtSecret()) as AuthPayload;
     } catch {
         return null;
     }

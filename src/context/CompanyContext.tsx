@@ -8,10 +8,21 @@ interface Company {
     name: string;
     taxId: string;
     country: string;
+    groupId?: string | null;
+    metadata?: Record<string, unknown>;
+}
+
+interface CompanyGroup {
+    id: string;
+    name: string;
+    ownerId: string;
+    companies: Company[];
 }
 
 interface CompanyContextType {
     companies: Company[];
+    companyGroups: CompanyGroup[];
+    ungroupedCompanies: Company[];
     activeCompany: Company | null;
     activeCompanyId: string | null;
     setActiveCompanyId: (id: string) => void;
@@ -19,11 +30,14 @@ interface CompanyContextType {
     refreshCompanies: () => Promise<void>;
 }
 
+const STORAGE_KEY = 'contapro_active_company';
+
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
     const [companies, setCompanies] = useState<Company[]>([]);
+    const [companyGroups, setCompanyGroups] = useState<CompanyGroup[]>([]);
     const [activeCompanyId, setActiveCompanyIdState] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [hasHydrated, setHasHydrated] = useState(false);
@@ -36,20 +50,28 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         if (!user) return;
         setIsLoading(true);
         try {
-            const response = await fetch('/api/companies');
-            const data = await response.json();
-            if (data.companies) {
-                setCompanies(data.companies);
+            const [companiesRes, groupsRes] = await Promise.all([
+                fetch('/api/companies', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }),
+                fetch('/api/company-groups', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }),
+            ]);
 
-                // Si no hay empresa activa, intentar cargar de localStorage o tomar la primera
-                const savedId = localStorage.getItem('conta2go_active_company');
-                if (savedId && data.companies.some((c: Company) => c.id === savedId)) {
+            const companiesData = await companiesRes.json();
+            if (companiesData.companies) {
+                setCompanies(companiesData.companies);
+
+                const savedId = localStorage.getItem(STORAGE_KEY);
+                if (savedId && companiesData.companies.some((c: Company) => c.id === savedId)) {
                     setActiveCompanyIdState(savedId);
-                } else if (data.companies.length > 0) {
-                    const firstId = data.companies[0].id;
+                } else if (companiesData.companies.length > 0) {
+                    const firstId = companiesData.companies[0].id;
                     setActiveCompanyIdState(firstId);
-                    localStorage.setItem('conta2go_active_company', firstId);
+                    localStorage.setItem(STORAGE_KEY, firstId);
                 }
+            }
+
+            if (groupsRes.ok) {
+                const groupsData = await groupsRes.json();
+                setCompanyGroups(groupsData.groups || []);
             }
         } catch (error) {
             console.error('Error fetching companies:', error);
@@ -63,6 +85,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
             fetchCompanies();
         } else {
             setCompanies([]);
+            setCompanyGroups([]);
             setActiveCompanyIdState(null);
             setIsLoading(false);
         }
@@ -70,10 +93,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
     const setActiveCompanyId = (id: string) => {
         setActiveCompanyIdState(id);
-        localStorage.setItem('conta2go_active_company', id);
+        localStorage.setItem(STORAGE_KEY, id);
     };
 
     const activeCompany = companies.find(c => c.id === activeCompanyId) || null;
+
+    // Companies not in any group
+    const groupedCompanyIds = new Set(companyGroups.flatMap(g => g.companies.map(c => c.id)));
+    const ungroupedCompanies = companies.filter(c => !groupedCompanyIds.has(c.id));
 
     if (!hasHydrated) {
         return null;
@@ -82,11 +109,13 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     return (
         <CompanyContext.Provider value={{
             companies,
+            companyGroups,
+            ungroupedCompanies,
             activeCompany,
             activeCompanyId,
             setActiveCompanyId,
             isLoading,
-            refreshCompanies: fetchCompanies
+            refreshCompanies: fetchCompanies,
         }}>
             {children}
         </CompanyContext.Provider>

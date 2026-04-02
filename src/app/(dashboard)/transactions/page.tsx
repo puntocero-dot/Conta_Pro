@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
 import { useCompany } from '@/context/CompanyContext';
+import { useToast } from '@/context/ToastContext';
+import { Modal } from '@/components/ui/Modal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SkeletonStatsGrid, SkeletonTable } from '@/components/ui/Skeleton';
+import { formatCurrency, formatDate } from '@/lib/formatting';
 import styles from './transactions.module.css';
 
 interface Transaction {
@@ -12,6 +15,8 @@ interface Transaction {
     amount: number;
     description: string;
     date: string;
+    status: 'ACTIVE' | 'ANNULLED' | 'CORRECTED';
+    clientId?: string;
     category: {
         name: string;
         icon: string;
@@ -20,13 +25,14 @@ interface Transaction {
 }
 
 export default function TransactionsPage() {
-    const { user, loading: authLoading } = useAuth();
     const { activeCompanyId, isLoading: companyLoading } = useCompany();
-    const router = useRouter();
+    const { showToast } = useToast();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'INGRESO' | 'EGRESO'>('ALL');
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+    const [annullingId, setAnnullingId] = useState<string | null>(null);
 
     const fetchTransactions = useCallback(async () => {
         if (!activeCompanyId) return;
@@ -34,8 +40,9 @@ export default function TransactionsPage() {
         try {
             const response = await fetch('/api/transactions', {
                 headers: {
-                    'x-company-id': activeCompanyId
-                }
+                    'x-company-id': activeCompanyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
             });
             if (response.ok) {
                 const data = await response.json();
@@ -47,12 +54,6 @@ export default function TransactionsPage() {
             setLoading(false);
         }
     }, [activeCompanyId]);
-
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        }
-    }, [user, authLoading, router]);
 
     useEffect(() => {
         if (activeCompanyId) {
@@ -67,21 +68,23 @@ export default function TransactionsPage() {
         filter === 'ALL' || t.type === filter
     );
 
-    const totalIngresos = transactions
-        .filter(t => t.type === 'INGRESO')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalEgresos = transactions
-        .filter(t => t.type === 'EGRESO')
-        .reduce((sum, t) => sum + t.amount, 0);
-
+    const totalIngresos = transactions.filter(t => t.type === 'INGRESO').reduce((s, t) => s + t.amount, 0);
+    const totalEgresos = transactions.filter(t => t.type === 'EGRESO').reduce((s, t) => s + t.amount, 0);
     const balance = totalIngresos - totalEgresos;
 
-    if (authLoading || companyLoading || (loading && transactions.length === 0)) {
+    if (companyLoading || (loading && transactions.length === 0 && activeCompanyId)) {
         return (
-            <div className={styles.loading}>
-                <div className={styles.spinner}></div>
-                <p>Cargando transacciones...</p>
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                    <div>
+                        <h1>Transacciones</h1>
+                        <p>Historial financiero y control de caja</p>
+                    </div>
+                </div>
+                <SkeletonStatsGrid count={3} />
+                <div style={{ marginTop: '1.5rem' }}>
+                    <SkeletonTable rows={5} cols={4} />
+                </div>
             </div>
         );
     }
@@ -102,13 +105,13 @@ export default function TransactionsPage() {
                 </button>
             </div>
 
-            {!activeCompanyId && (
-                <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed #cbd5e1' }}>
-                    <p>Selecciona una empresa en el panel lateral para ver sus transacciones.</p>
-                </div>
-            )}
-
-            {activeCompanyId && (
+            {!activeCompanyId ? (
+                <EmptyState
+                    icon="🏢"
+                    title="Sin empresa seleccionada"
+                    description="Selecciona una empresa en el panel lateral para ver sus transacciones."
+                />
+            ) : (
                 <>
                     {/* Stats Cards */}
                     <div className={styles.statsGrid}>
@@ -116,83 +119,96 @@ export default function TransactionsPage() {
                             <div className={styles.statIcon}>📈</div>
                             <div className={styles.statContent}>
                                 <p className={styles.statLabel}>Ingresos</p>
-                                <h3 className={styles.statValue}>${(totalIngresos ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                                <h3 className={styles.statValue}>{formatCurrency(totalIngresos)}</h3>
                             </div>
                         </div>
-
                         <div className={`${styles.statCard} ${styles.expense}`}>
                             <div className={styles.statIcon}>📉</div>
                             <div className={styles.statContent}>
                                 <p className={styles.statLabel}>Egresos</p>
-                                <h3 className={styles.statValue}>${(totalEgresos ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                                <h3 className={styles.statValue}>{formatCurrency(totalEgresos)}</h3>
                             </div>
                         </div>
-
                         <div className={`${styles.statCard} ${balance >= 0 ? styles.positive : styles.negative}`}>
                             <div className={styles.statIcon}>{balance >= 0 ? '✅' : '⚠️'}</div>
                             <div className={styles.statContent}>
                                 <p className={styles.statLabel}>Situación Neta</p>
-                                <h3 className={styles.statValue}>${(balance ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</h3>
+                                <h3 className={styles.statValue}>{formatCurrency(balance)}</h3>
                             </div>
                         </div>
                     </div>
 
                     {/* Filters */}
                     <div className={styles.filters}>
-                        <button
-                            className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
-                            onClick={() => setFilter('ALL')}
-                        >
-                            Todas
-                        </button>
-                        <button
-                            className={filter === 'INGRESO' ? styles.filterActive : styles.filterBtn}
-                            onClick={() => setFilter('INGRESO')}
-                        >
-                            Ingresos
-                        </button>
-                        <button
-                            className={filter === 'EGRESO' ? styles.filterActive : styles.filterBtn}
-                            onClick={() => setFilter('EGRESO')}
-                        >
-                            Egresos
-                        </button>
+                        {(['ALL', 'INGRESO', 'EGRESO'] as const).map(f => (
+                            <button
+                                key={f}
+                                className={filter === f ? styles.filterActive : styles.filterBtn}
+                                onClick={() => setFilter(f)}
+                            >
+                                {f === 'ALL' ? 'Todas' : f === 'INGRESO' ? 'Ingresos' : 'Egresos'}
+                            </button>
+                        ))}
                     </div>
 
                     {/* Transactions List */}
                     <div className={styles.transactionsList}>
                         {filteredTransactions.length === 0 ? (
-                            <div className="card" style={{ textAlign: 'center', padding: '5rem 2rem', border: 'none' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: '1.5rem', opacity: 0.5 }}>📭</div>
-                                <h3>Sin transacciones</h3>
-                                <p style={{ color: '#64748b', marginBottom: '2rem' }}>No se encontraron registros para este filtro.</p>
-                                <button
-                                    onClick={() => setShowNewModal(true)}
-                                    className="btn btn-secondary"
-                                    disabled={!activeCompanyId}
-                                >
-                                    Crear Transacción
-                                </button>
-                            </div>
+                            <EmptyState
+                                icon="📭"
+                                title="Sin transacciones"
+                                description="No se encontraron registros para este filtro."
+                                actionLabel="Crear Transacción"
+                                onAction={() => setShowNewModal(true)}
+                            />
                         ) : (
                             filteredTransactions.map(transaction => (
                                 <div key={transaction.id} className={styles.transactionCard}>
-                                    <div className={styles.transactionIcon} style={{ background: transaction.category?.color || '#f1f5f9' }}>
+                                    <div
+                                        className={styles.transactionIcon}
+                                        style={{ background: transaction.category?.color ? `${transaction.category.color}22` : '#f1f5f9' }}
+                                    >
                                         {transaction.category?.icon || '💰'}
                                     </div>
                                     <div className={styles.transactionInfo}>
-                                        <h4>{transaction.description}</h4>
+                                        <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {transaction.description}
+                                            {transaction.status === 'ANNULLED' && (
+                                                <span className={styles.badgeAnnulled}>Anulada</span>
+                                            )}
+                                            {transaction.status === 'CORRECTED' && (
+                                                <span className={styles.badgeCorrected}>Corregida</span>
+                                            )}
+                                        </h4>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                             <span className={styles.transactionCategory}>{transaction.category?.name || 'General'}</span>
                                             <span style={{ color: '#cbd5e1' }}>•</span>
                                             <span className={styles.transactionDate}>
-                                                {new Date(transaction.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                {formatDate(transaction.date)}
                                             </span>
                                         </div>
                                     </div>
-                                    <div className={`${styles.transactionAmount} ${transaction.type === 'INGRESO' ? styles.amountIncome : styles.amountExpense}`}>
-                                        {transaction.type === 'INGRESO' ? '+' : '-'}
-                                        ${(transaction.amount ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                    <div className={`${styles.transactionAmount} ${transaction.type === 'INGRESO' ? styles.amountIncome : styles.amountExpense} ${transaction.status === 'ANNULLED' ? styles.statusAnnulled : ''}`}>
+                                        {transaction.type === 'INGRESO' ? '+' : '-'}{formatCurrency(transaction.amount ?? 0)}
+                                    </div>
+                                    <div className={styles.actionBtn}>
+                                        <button
+                                            onClick={() => setEditingTransaction(transaction)}
+                                            className="btn btn-ghost"
+                                            title="Corregir"
+                                            disabled={transaction.status === 'ANNULLED'}
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            onClick={() => setAnnullingId(transaction.id)}
+                                            className="btn btn-ghost"
+                                            title="Anular"
+                                            style={{ color: '#ef4444' }}
+                                            disabled={transaction.status === 'ANNULLED'}
+                                        >
+                                            🚫
+                                        </button>
                                     </div>
                                 </div>
                             ))
@@ -201,184 +217,214 @@ export default function TransactionsPage() {
                 </>
             )}
 
-            {/* New Transaction Modal */}
-            {showNewModal && activeCompanyId && (
-                <NewTransactionModal
+            {/* New / Edit Transaction Modal */}
+            {(showNewModal || editingTransaction) && activeCompanyId && (
+                <TransactionModal
                     companyId={activeCompanyId}
-                    onClose={() => setShowNewModal(false)}
-                    onSuccess={() => {
+                    initialData={editingTransaction || undefined}
+                    onClose={() => { setShowNewModal(false); setEditingTransaction(null); }}
+                    onSuccess={(msg) => {
                         setShowNewModal(false);
+                        setEditingTransaction(null);
                         fetchTransactions();
+                        showToast(msg, 'success');
                     }}
+                    onError={(msg) => showToast(msg, 'error')}
+                />
+            )}
+
+            {/* Annul Confirmation Modal */}
+            {annullingId && activeCompanyId && (
+                <AnnulConfirmModal
+                    transactionId={annullingId}
+                    companyId={activeCompanyId}
+                    onClose={() => setAnnullingId(null)}
+                    onSuccess={() => {
+                        setAnnullingId(null);
+                        fetchTransactions();
+                        showToast('Transacción anulada correctamente', 'success');
+                    }}
+                    onError={(msg) => showToast(msg, 'error')}
                 />
             )}
         </div>
     );
 }
 
-function NewTransactionModal({
+function TransactionModal({
     companyId,
+    initialData,
     onClose,
-    onSuccess
+    onSuccess,
+    onError,
 }: {
     companyId: string;
+    initialData?: Transaction;
     onClose: () => void;
-    onSuccess: () => void
+    onSuccess: (msg: string) => void;
+    onError: (msg: string) => void;
 }) {
     const [formData, setFormData] = useState({
-        type: 'INGRESO' as 'INGRESO' | 'EGRESO',
-        amount: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0],
-        categoryId: '',
-        clientId: '',
+        type: initialData?.type || ('INGRESO' as 'INGRESO' | 'EGRESO'),
+        amount: initialData?.amount.toString() || '',
+        description: initialData?.description || '',
+        date: initialData?.date
+            ? new Date(initialData.date).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0],
+        categoryId: (initialData as any)?.categoryId || '',
+        clientId: initialData?.clientId || '',
     });
     const [clients, setClients] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        const fetchCounterparties = async () => {
+        const fetchClients = async () => {
             try {
-                // Filter by role: Income -> CLIENT, Expense -> SUPPLIER
-                // We also include 'BOTH' in both cases
-                const targetRole = formData.type === 'INGRESO' ? 'CLIENT' : 'SUPPLIER';
-                const response = await fetch(`/api/clients`, {
-                    headers: { 'x-company-id': companyId }
+                const res = await fetch('/api/clients', {
+                    headers: { 'x-company-id': companyId, 'X-Requested-With': 'XMLHttpRequest' },
                 });
-                if (response.ok) {
-                    const data = await response.json();
-                    // Filter locally for simplicity, or we could update API to support multiple roles
-                    const filtered = data.clients.filter((c: any) => 
-                        c.role === targetRole || c.role === 'BOTH'
-                    );
-                    setClients(filtered);
+                if (res.ok) {
+                    const data = await res.json();
+                    const targetRole = formData.type === 'INGRESO' ? 'CLIENT' : 'SUPPLIER';
+                    setClients(data.clients.filter((c: any) => c.role === targetRole || c.role === 'BOTH'));
                 }
-            } catch (error) {
-                console.error('Error fetching counterparties:', error);
+            } catch (e) {
+                console.error('Error fetching clients', e);
             }
         };
-        fetchCounterparties();
+        fetchClients();
     }, [companyId, formData.type]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-
+        const amount = parseFloat(formData.amount);
+        if (isNaN(amount) || amount <= 0) {
+            onError('El monto debe ser un número mayor a 0');
+            return;
+        }
+        setSubmitting(true);
         try {
-            const response = await fetch('/api/transactions', {
-                method: 'POST',
+            const url = initialData ? `/api/transactions/${initialData.id}` : '/api/transactions';
+            const method = initialData ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-company-id': companyId
+                    'x-company-id': companyId,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({
-                    ...formData,
-                    amount: parseFloat(formData.amount),
-                }),
+                body: JSON.stringify({ ...formData, amount }),
             });
+            if (res.ok) {
+                onSuccess(initialData ? 'Transacción corregida correctamente' : 'Transacción registrada correctamente');
+            } else {
+                const data = await res.json().catch(() => ({}));
+                onError(data.error || 'Error al guardar transacción');
+            }
+        } catch {
+            onError('Error de conexión');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-            if (response.ok) {
+    return (
+        <Modal
+            isOpen
+            onClose={onClose}
+            title={initialData ? 'Corregir Transacción' : 'Nueva Transacción'}
+            size="md"
+        >
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label className="label">Tipo de Movimiento</label>
+                    <div className={styles.typeButtons}>
+                        <button type="button" className={formData.type === 'INGRESO' ? styles.typeActive : ''} onClick={() => !initialData && setFormData(p => ({ ...p, type: 'INGRESO' }))} disabled={!!initialData}>📈 Ingreso</button>
+                        <button type="button" className={formData.type === 'EGRESO' ? styles.typeActive : ''} onClick={() => !initialData && setFormData(p => ({ ...p, type: 'EGRESO' }))} disabled={!!initialData}>📉 Egreso</button>
+                    </div>
+                </div>
+                <div className="form-group">
+                    <label className="label">Monto (USD)</label>
+                    <input type="number" className="input" step="0.01" min="0.01" max="999999999" required value={formData.amount} onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" />
+                </div>
+                <div className="form-group">
+                    <label className="label">{formData.type === 'INGRESO' ? 'Cliente que paga' : 'Proveedor del gasto'}</label>
+                    <select className="input" value={formData.clientId} onChange={e => setFormData(p => ({ ...p, clientId: e.target.value }))}>
+                        <option value="">Seleccionar entidad...</option>
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label className="label">Descripción</label>
+                    <input type="text" className="input" required value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Ej: Cobro factura #123" />
+                </div>
+                <div className="form-group">
+                    <label className="label">Fecha</label>
+                    <input type="date" className="input" required value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                    <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                    <button type="submit" disabled={submitting} className="btn btn-primary" style={{ flex: 2 }}>
+                        {submitting ? 'Guardando...' : initialData ? 'Guardar Cambios' : 'Registrar'}
+                    </button>
+                </div>
+            </form>
+        </Modal>
+    );
+}
+
+function AnnulConfirmModal({
+    transactionId,
+    companyId,
+    onClose,
+    onSuccess,
+    onError,
+}: {
+    transactionId: string;
+    companyId: string;
+    onClose: () => void;
+    onSuccess: () => void;
+    onError: (msg: string) => void;
+}) {
+    const [loading, setLoading] = useState(false);
+
+    const handleAnnul = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/transactions/${transactionId}/annul`, {
+                method: 'POST',
+                headers: {
+                    'x-company-id': companyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            if (res.ok) {
                 onSuccess();
             } else {
-                alert('Error al crear transacción');
+                const data = await res.json().catch(() => ({}));
+                onError(data.error || 'Error al anular transacción');
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error de conexión');
+        } catch {
+            onError('Error de conexión');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <div className={styles.modalHeader}>
-                    <h3 style={{ margin: 0 }}>Nueva Transacción</h3>
-                    <button onClick={onClose} className={styles.closeBtn}>✕</button>
+        <Modal isOpen onClose={onClose} title="Confirmar Anulación" size="sm">
+            <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚠️</div>
+                <p style={{ color: '#64748b', marginBottom: '2rem', lineHeight: 1.5 }}>
+                    Esta acción marcará la transacción como anulada y generará una reversión en la contabilidad. <strong>No se puede deshacer.</strong>
+                </p>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                    <button onClick={handleAnnul} disabled={loading} className="btn btn-danger" style={{ flex: 1 }}>
+                        {loading ? 'Anulando...' : 'Confirmar Anulación'}
+                    </button>
                 </div>
-
-                <form onSubmit={handleSubmit} className={styles.modalForm}>
-                    <div className="form-group">
-                        <label className="label">Tipo de Movimiento</label>
-                        <div className={styles.typeButtons}>
-                            <button
-                                type="button"
-                                className={formData.type === 'INGRESO' ? styles.typeActive : ''}
-                                onClick={() => setFormData({ ...formData, type: 'INGRESO' })}
-                            >
-                                📈 Ingreso
-                            </button>
-                            <button
-                                type="button"
-                                className={formData.type === 'EGRESO' ? styles.typeActive : ''}
-                                onClick={() => setFormData({ ...formData, type: 'EGRESO' })}
-                            >
-                                📉 Egreso
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label className="label">Monto (USD)</label>
-                        <input
-                            type="number"
-                            className="input"
-                            step="0.01"
-                            required
-                            value={formData.amount}
-                            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                            placeholder="0.00"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="label">{formData.type === 'INGRESO' ? 'Cliente que paga' : 'Proveedor del gasto'}</label>
-                        <select
-                            className="input"
-                            value={formData.clientId}
-                            onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                        >
-                            <option value="">Seleccionar entidad...</option>
-                            {clients.map(client => (
-                                <option key={client.id} value={client.id}>{client.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label className="label">Descripción</label>
-                        <input
-                            type="text"
-                            className="input"
-                            required
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Ej: Cobro factura #123"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="label">Fecha</label>
-                        <input
-                            type="date"
-                            className="input"
-                            required
-                            value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
-                            Cerrar
-                        </button>
-                        <button type="submit" disabled={loading} className="btn btn-primary" style={{ flex: 2 }}>
-                            {loading ? 'Guardando...' : 'Registrar Movimiento'}
-                        </button>
-                    </div>
-                </form>
             </div>
-        </div>
+        </Modal>
     );
 }

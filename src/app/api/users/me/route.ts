@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
+import { apiError } from '@/lib/api/error-response';
 
 export async function GET(request: NextRequest) {
     try {
@@ -25,11 +26,8 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json(dbUser);
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error in GET /api/users/me:', error);
-        return NextResponse.json(
-            { error: 'Error interno del servidor', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error interno del servidor', 500, error);
     }
 }

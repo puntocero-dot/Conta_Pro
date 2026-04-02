@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuditLogs, AuditAction, AuditResult } from '@/lib/audit/audit-service';
-import { getAuthFromRequest } from '@/lib/auth/jwt';
+import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
+import { apiError } from '@/lib/api/error-response';
+import { requirePermission } from '@/lib/auth/authorize';
 
 export async function GET(request: NextRequest) {
     try {
@@ -9,13 +11,15 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
-        // Obtener parámetros de query
+        const permError = requirePermission(auth.role, 'audit_log:read');
+        if (permError) return permError;
+
         const searchParams = request.nextUrl.searchParams;
         const queryUserId = searchParams.get('userId') || undefined;
         const queryAction = searchParams.get('action') as AuditAction | undefined;
         const queryResource = searchParams.get('resource') || undefined;
         const queryResult = searchParams.get('result') as AuditResult | undefined;
-        const queryLimit = parseInt(searchParams.get('limit') || '50');
+        const queryLimit = Math.min(parseInt(searchParams.get('limit') || '50'), 200);
         const queryOffset = parseInt(searchParams.get('offset') || '0');
 
         const queryStartDate = searchParams.get('startDate')
@@ -25,9 +29,14 @@ export async function GET(request: NextRequest) {
             ? new Date(searchParams.get('endDate')!)
             : undefined;
 
-        // Solo SUPER_ADMIN puede ver todos los logs, otros solo los suyos
+        // Obtener companyId para aislamiento de tenant
+        const companyId = await getCompanyIdFromRequest(request, auth.userId);
+
         const logFilters = {
+            // SUPER_ADMIN puede filtrar por cualquier usuario, otros solo ven los suyos
             userId: auth.role !== 'SUPER_ADMIN' ? auth.userId : queryUserId,
+            // Non-SUPER_ADMIN siempre filtran por su empresa
+            companyId: auth.role !== 'SUPER_ADMIN' ? (companyId || undefined) : undefined,
             action: queryAction,
             resource: queryResource,
             result: queryResult,
@@ -40,11 +49,8 @@ export async function GET(request: NextRequest) {
         const logs = await getAuditLogs(logFilters);
 
         return NextResponse.json(logs);
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error fetching audit logs:', error);
-        return NextResponse.json(
-            { error: 'Error al obtener registros de auditoría', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error al obtener registros de auditoría', 500, error);
     }
 }

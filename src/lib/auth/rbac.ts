@@ -14,6 +14,10 @@ export const PERMISSIONS = {
         'transaction:read',
         'transaction:update',
         'transaction:delete',
+        'client:create',
+        'client:read',
+        'client:update',
+        'client:delete',
         'report:generate',
     ],
     [Role.CLIENTE]: [
@@ -24,6 +28,7 @@ export const PERMISSIONS = {
     [Role.AUDITOR]: [
         'company:read',
         'transaction:read',
+        'client:read',
         'report:read',
         'audit_log:read',
     ],

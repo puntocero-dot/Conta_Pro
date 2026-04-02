@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
 import { useCompany } from '@/context/CompanyContext';
+import { useToast } from '@/context/ToastContext';
+import { Modal } from '@/components/ui/Modal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SkeletonStatsGrid, SkeletonTable } from '@/components/ui/Skeleton';
+import { formatCurrency } from '@/lib/formatting';
 import styles from './clients.module.css';
 
 interface Client {
@@ -16,13 +19,12 @@ interface Client {
     address?: string;
     type: 'INDIVIDUAL' | 'COMPANY';
     role: 'CLIENT' | 'SUPPLIER' | 'BOTH';
-    balance: number;
+    balance?: number;
 }
 
 export default function ClientsPage() {
-    const { user, loading: authLoading } = useAuth();
     const { activeCompanyId, isLoading: companyLoading } = useCompany();
-    const router = useRouter();
+    const { showToast } = useToast();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
@@ -34,10 +36,12 @@ export default function ClientsPage() {
         if (!activeCompanyId) return;
         setLoading(true);
         try {
-            const response = await fetch('/api/clients', {
+            const url = roleFilter === 'ALL' ? '/api/clients' : `/api/clients?role=${roleFilter}`;
+            const response = await fetch(url, {
                 headers: {
-                    'x-company-id': activeCompanyId
-                }
+                    'x-company-id': activeCompanyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
             });
             if (response.ok) {
                 const data = await response.json();
@@ -48,57 +52,35 @@ export default function ClientsPage() {
         } finally {
             setLoading(false);
         }
-    }, [activeCompanyId]);
-
-    const fetchClientsByRole = useCallback(async (role: string) => {
-        if (!activeCompanyId) return;
-        setLoading(true);
-        try {
-            const url = role === 'ALL' ? '/api/clients' : `/api/clients?role=${role}`;
-            const response = await fetch(url, {
-                headers: { 'x-company-id': activeCompanyId }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setClients(data.clients || []);
-            }
-        } catch (error) {
-            console.error('Error fetching clients by role:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [activeCompanyId]);
-
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        }
-    }, [user, authLoading, router]);
+    }, [activeCompanyId, roleFilter]);
 
     useEffect(() => {
         if (activeCompanyId) {
-            if (roleFilter === 'ALL') fetchClients();
-            else fetchClientsByRole(roleFilter);
+            fetchClients();
         } else {
             setClients([]);
             setLoading(false);
         }
-    }, [activeCompanyId, roleFilter, fetchClients, fetchClientsByRole]);
+    }, [activeCompanyId, fetchClients]);
 
     const filteredClients = clients.filter(c => {
-        const matchesFilter = filter === 'ALL' || c.type === filter;
-        const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (c.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-        return matchesFilter && matchesSearch;
+        const matchesType = filter === 'ALL' || c.type === filter;
+        const matchesSearch = !searchTerm ||
+            c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesType && matchesSearch;
     });
 
-    const totalBalance = clients.reduce((sum, c) => sum + c.balance, 0);
+    const totalBalance = clients.reduce((sum, c) => sum + (c.balance ?? 0), 0);
 
-    if (authLoading || companyLoading || (loading && clients.length === 0)) {
+    if (companyLoading || (loading && clients.length === 0 && activeCompanyId)) {
         return (
-            <div className={styles.loading}>
-                <div className={styles.spinner}></div>
-                <p>Cargando clientes...</p>
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                    <div><h1>Clientes</h1><p>Gestión de cartera y contactos</p></div>
+                </div>
+                <SkeletonStatsGrid count={3} />
+                <div style={{ marginTop: '1.5rem' }}><SkeletonTable rows={5} cols={4} /></div>
             </div>
         );
     }
@@ -110,118 +92,72 @@ export default function ClientsPage() {
                     <h1 style={{ marginBottom: '0.25rem' }}>Clientes</h1>
                     <p>Gestión de cartera y contactos</p>
                 </div>
-                <button
-                    onClick={() => setShowNewModal(true)}
-                    className="btn btn-primary"
-                    disabled={!activeCompanyId}
-                >
+                <button onClick={() => setShowNewModal(true)} className="btn btn-primary" disabled={!activeCompanyId}>
                     <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
                 </button>
             </div>
 
-            {!activeCompanyId && (
-                <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '1px dashed #cbd5e1', marginBottom: '2rem' }}>
-                    <p>Selecciona una empresa en el panel lateral para gestionar sus clientes y proveedores.</p>
-                </div>
-            )}
-
-            {activeCompanyId && (
+            {!activeCompanyId ? (
+                <EmptyState
+                    icon="🏢"
+                    title="Sin empresa seleccionada"
+                    description="Selecciona una empresa en el panel lateral para gestionar sus clientes y proveedores."
+                />
+            ) : (
                 <>
-                    {/* Stats */}
                     <div className={styles.statsGrid}>
                         <div className={styles.statCard}>
                             <div className={styles.statIcon}>👥</div>
-                            <div className={styles.statInfo}>
-                                <p>Total Clientes</p>
-                                <h3>{clients.length}</h3>
-                            </div>
+                            <div className={styles.statInfo}><p>Total Contactos</p><h3>{clients.length}</h3></div>
                         </div>
                         <div className={styles.statCard}>
                             <div className={styles.statIcon}>🏢</div>
-                            <div className={styles.statInfo}>
-                                <p>Proveedores</p>
-                                <h3>{clients.filter(c => c.role === 'SUPPLIER' || c.role === 'BOTH').length}</h3>
-                            </div>
+                            <div className={styles.statInfo}><p>Proveedores</p><h3>{clients.filter(c => c.role === 'SUPPLIER' || c.role === 'BOTH').length}</h3></div>
                         </div>
                         <div className={styles.statCard}>
                             <div className={styles.statIcon}>💰</div>
-                            <div className={styles.statInfo}>
-                                <p>Saldo Pendiente</p>
-                                <h3>${(totalBalance ?? 0).toLocaleString('es-MX')}</h3>
-                            </div>
+                            <div className={styles.statInfo}><p>Saldo Pendiente</p><h3>{formatCurrency(totalBalance)}</h3></div>
                         </div>
                     </div>
 
-                    {/* Content Section */}
                     <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
                             <div className={styles.filters}>
-                                <button
-                                    className={filter === 'ALL' ? styles.filterActive : styles.filterBtn}
-                                    onClick={() => setFilter('ALL')}
-                                >
-                                    Todos
-                                </button>
-                                <button
-                                    className={filter === 'INDIVIDUAL' ? styles.filterActive : styles.filterBtn}
-                                    onClick={() => setFilter('INDIVIDUAL')}
-                                >
-                                    Personas
-                                </button>
-                                <button
-                                    className={filter === 'COMPANY' ? styles.filterActive : styles.filterBtn}
-                                    onClick={() => setFilter('COMPANY')}
-                                >
-                                    Empresas
-                                </button>
+                                {(['ALL', 'INDIVIDUAL', 'COMPANY'] as const).map(f => (
+                                    <button key={f} className={filter === f ? styles.filterActive : styles.filterBtn} onClick={() => setFilter(f)}>
+                                        {f === 'ALL' ? 'Todos' : f === 'INDIVIDUAL' ? 'Personas' : 'Empresas'}
+                                    </button>
+                                ))}
                             </div>
                             <div className={styles.filters}>
-                                <button
-                                    className={roleFilter === 'ALL' ? styles.filterActive : styles.filterBtn}
-                                    onClick={() => setRoleFilter('ALL')}
-                                >
-                                    Filtro Rol: Todos
-                                </button>
-                                <button
-                                    className={roleFilter === 'CLIENT' ? styles.filterActive : styles.filterBtn}
-                                    onClick={() => setRoleFilter('CLIENT')}
-                                >
-                                    Clientes
-                                </button>
-                                <button
-                                    className={roleFilter === 'SUPPLIER' ? styles.filterActive : styles.filterBtn}
-                                    onClick={() => setRoleFilter('SUPPLIER')}
-                                >
-                                    Proveedores
-                                </button>
+                                {(['ALL', 'CLIENT', 'SUPPLIER', 'BOTH'] as const).map(r => (
+                                    <button key={r} className={roleFilter === r ? styles.filterActive : styles.filterBtn} onClick={() => setRoleFilter(r)}>
+                                        {r === 'ALL' ? 'Todos los roles' : r === 'CLIENT' ? 'Clientes' : r === 'SUPPLIER' ? 'Proveedores' : 'Ambos'}
+                                    </button>
+                                ))}
                             </div>
                             <div style={{ position: 'relative' }}>
                                 <input
                                     type="text"
-                                    placeholder="Buscar cliente..."
+                                    placeholder="Buscar..."
                                     className="input"
-                                    style={{ width: '240px', paddingLeft: '2.5rem' }}
+                                    style={{ width: '220px', paddingLeft: '2.25rem' }}
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={e => setSearchTerm(e.target.value)}
                                 />
-                                <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+                                <span style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
                             </div>
                         </div>
 
                         <div className={styles.clientsList}>
                             {filteredClients.length === 0 ? (
-                                <div className={styles.emptyState}>
-                                    <div className={styles.emptyIcon}>👤</div>
-                                    <h3>Sin resultados</h3>
-                                    <p style={{ marginBottom: '1.5rem' }}>No se encontraron clientes para este filtro.</p>
-                                    <button
-                                        onClick={() => setShowNewModal(true)}
-                                        className="btn btn-primary"
-                                        disabled={!activeCompanyId}
-                                    >
-                                        Crear Primer Cliente
-                                    </button>
-                                </div>
+                                <EmptyState
+                                    icon="👤"
+                                    title="Sin resultados"
+                                    description={clients.length === 0 ? 'Aún no has registrado clientes o proveedores.' : 'No se encontraron contactos para este filtro.'}
+                                    actionLabel={clients.length === 0 ? 'Crear Primer Contacto' : undefined}
+                                    onAction={clients.length === 0 ? () => setShowNewModal(true) : undefined}
+                                />
                             ) : (
                                 filteredClients.map(client => (
                                     <div key={client.id} className={styles.clientCard}>
@@ -233,18 +169,14 @@ export default function ClientsPage() {
                                             <div className={styles.clientDetails}>
                                                 {client.email && <span>✉️ {client.email}</span>}
                                                 {client.phone && <span>📞 {client.phone}</span>}
-                                                <span className={styles.roleBadge}>{client.role}</span>
+                                                <span className={styles.roleBadge}>{client.role === 'CLIENT' ? 'Cliente' : client.role === 'SUPPLIER' ? 'Proveedor' : 'Ambos'}</span>
                                             </div>
                                         </div>
                                         <div className={styles.clientBalance}>
                                             <p>Saldo</p>
-                                            <h4 className={(client.balance ?? 0) > 0 ? styles.positive : ''}>
-                                                ${(client.balance ?? 0).toLocaleString('es-MX')}
-                                            </h4>
+                                            <h4 className={(client.balance ?? 0) > 0 ? styles.positive : ''}>{formatCurrency(client.balance ?? 0)}</h4>
                                         </div>
-                                        <button className="btn btn-ghost" style={{ fontSize: '1.25rem' }}>
-                                            ⋮
-                                        </button>
+                                        <button className="btn btn-ghost" style={{ fontSize: '1.25rem' }} aria-label="Opciones">⋮</button>
                                     </div>
                                 ))
                             )}
@@ -260,7 +192,9 @@ export default function ClientsPage() {
                     onSuccess={() => {
                         setShowNewModal(false);
                         fetchClients();
+                        showToast('Cliente registrado correctamente', 'success');
                     }}
+                    onError={msg => showToast(msg, 'error')}
                 />
             )}
         </div>
@@ -270,11 +204,13 @@ export default function ClientsPage() {
 function NewClientModal({
     companyId,
     onClose,
-    onSuccess
+    onSuccess,
+    onError,
 }: {
     companyId: string;
     onClose: () => void;
-    onSuccess: () => void
+    onSuccess: () => void;
+    onError: (msg: string) => void;
 }) {
     const [formData, setFormData] = useState({
         type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'COMPANY',
@@ -286,160 +222,88 @@ function NewClientModal({
         address: '',
         role: 'CLIENT' as 'CLIENT' | 'SUPPLIER' | 'BOTH',
     });
-    const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-
+        setSubmitting(true);
         try {
-            const response = await fetch('/api/clients', {
+            const res = await fetch('/api/clients', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-company-id': companyId
+                    'x-company-id': companyId,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
                 body: JSON.stringify(formData),
             });
-
-            if (response.ok) {
+            if (res.ok) {
                 onSuccess();
             } else {
-                alert('Error al crear cliente');
+                const data = await res.json().catch(() => ({}));
+                onError(data.error || 'Error al crear cliente');
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al crear cliente');
+        } catch {
+            onError('Error de conexión');
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
     return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <div className={styles.modalHeader}>
-                    <h3 style={{ margin: 0 }}>Registrar Nuevo Cliente</h3>
-                    <button onClick={onClose} className={styles.closeBtn}>✕</button>
+        <Modal isOpen onClose={onClose} title="Registrar Nuevo Contacto" size="md">
+            <form onSubmit={handleSubmit}>
+                <div className={styles.typeButtons} style={{ marginBottom: '1.25rem' }}>
+                    <button type="button" className={formData.type === 'INDIVIDUAL' ? styles.typeActive : ''} onClick={() => setFormData(p => ({ ...p, type: 'INDIVIDUAL' }))}>👤 Persona Natural</button>
+                    <button type="button" className={formData.type === 'COMPANY' ? styles.typeActive : ''} onClick={() => setFormData(p => ({ ...p, type: 'COMPANY' }))}>🏢 Empresa</button>
                 </div>
 
-                <form onSubmit={handleSubmit} className={styles.modalForm}>
-                    <div className={styles.typeButtons}>
-                        <button
-                            type="button"
-                            className={formData.type === 'INDIVIDUAL' ? styles.typeActive : ''}
-                            onClick={() => setFormData({ ...formData, type: 'INDIVIDUAL' })}
-                        >
-                            👤 Persona Natural
-                        </button>
-                        <button
-                            type="button"
-                            className={formData.type === 'COMPANY' ? styles.typeActive : ''}
-                            onClick={() => setFormData({ ...formData, type: 'COMPANY' })}
-                        >
-                            🏢 Empresa / Entidad
-                        </button>
-                    </div>
+                <div className="form-group">
+                    <label className="label">Función en el Negocio</label>
+                    <select className="input" value={formData.role} onChange={e => setFormData(p => ({ ...p, role: e.target.value as any }))}>
+                        <option value="CLIENT">Cliente (recibo pagos)</option>
+                        <option value="SUPPLIER">Proveedor (realizo pagos)</option>
+                        <option value="BOTH">Ambos</option>
+                    </select>
+                </div>
 
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                        <label className="label">Función en el Negocio</label>
-                        <select 
-                            className="input"
-                            value={formData.role}
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                        >
-                            <option value="CLIENT">Damos servicios (Cliente)</option>
-                            <option value="SUPPLIER">Nos provee productos (Proveedor)</option>
-                            <option value="BOTH">Ambos (Cliente y Proveedor)</option>
-                        </select>
-                        <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem' }}>
-                            Esto ayuda a separar el flujo de ingresos de los costos de operación.
-                        </p>
-                    </div>
+                <div className="form-group">
+                    <label className="label">Nombre o Razón Social</label>
+                    <input type="text" required className="input" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="Ej: Juan Pérez / Empresa S.A." />
+                </div>
 
+                <div className={styles.formRow}>
                     <div className="form-group">
-                        <label className="label">Nombre o Razón Social</label>
-                        <input
-                            type="text"
-                            required
-                            className="input"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Ej: Santiago Andre Ruballo"
-                        />
+                        <label className="label">Correo</label>
+                        <input type="email" className="input" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="correo@ejemplo.com" />
                     </div>
-
-                    <div className={styles.formRow}>
-                        <div className="form-group">
-                            <label className="label">Correo Electrónico</label>
-                            <input
-                                type="email"
-                                className="input"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="usuario@gmail.com"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="label">Número de Teléfono</label>
-                            <input
-                                type="tel"
-                                className="input"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="7222-6244"
-                            />
-                        </div>
-                    </div>
-
-                    <div className={styles.formRow}>
-                        {formData.type === 'INDIVIDUAL' ? (
-                            <div className="form-group">
-                                <label className="label">DUI (con guiones)</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    value={formData.dui}
-                                    onChange={(e) => setFormData({ ...formData, dui: e.target.value })}
-                                    placeholder="01234567-8"
-                                    maxLength={10}
-                                />
-                            </div>
-                        ) : (
-                            <div className="form-group">
-                                <label className="label">NIT (con guiones)</label>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    value={formData.nit}
-                                    onChange={(e) => setFormData({ ...formData, nit: e.target.value })}
-                                    placeholder="0614-210188-101-2"
-                                />
-                            </div>
-                        )}
-                    </div>
-
                     <div className="form-group">
-                        <label className="label">Dirección Residencial / Comercial</label>
-                        <textarea
-                            className="input"
-                            value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            placeholder="Calle Principal #123, San Salvador"
-                            rows={2}
-                        />
+                        <label className="label">Teléfono</label>
+                        <input type="tel" className="input" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} placeholder="7222-6244" />
                     </div>
+                </div>
 
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                        <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
-                            Cancelar
-                        </button>
-                        <button type="submit" disabled={loading} className="btn btn-primary" style={{ flex: 2 }}>
-                            {loading ? 'Procesando...' : 'Finalizar Registro'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div className="form-group">
+                    <label className="label">{formData.type === 'INDIVIDUAL' ? 'DUI' : 'NIT'}</label>
+                    {formData.type === 'INDIVIDUAL' ? (
+                        <input type="text" className="input" value={formData.dui} onChange={e => setFormData(p => ({ ...p, dui: e.target.value }))} placeholder="01234567-8" maxLength={10} />
+                    ) : (
+                        <input type="text" className="input" value={formData.nit} onChange={e => setFormData(p => ({ ...p, nit: e.target.value }))} placeholder="0614-210188-101-2" />
+                    )}
+                </div>
+
+                <div className="form-group">
+                    <label className="label">Dirección</label>
+                    <textarea className="input" value={formData.address} onChange={e => setFormData(p => ({ ...p, address: e.target.value }))} placeholder="Calle Principal #123, San Salvador" rows={2} />
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                    <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                    <button type="submit" disabled={submitting} className="btn btn-primary" style={{ flex: 2 }}>
+                        {submitting ? 'Registrando...' : 'Finalizar Registro'}
+                    </button>
+                </div>
+            </form>
+        </Modal>
     );
 }

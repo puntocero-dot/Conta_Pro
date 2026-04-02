@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { generateToken, AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from '@/lib/auth/jwt';
+import { checkRateLimit, recordFailedAttempt, clearRateLimit } from '@/lib/auth/rate-limiter';
 
 export async function POST(request: Request) {
     try {
@@ -15,15 +16,29 @@ export async function POST(request: Request) {
             );
         }
 
+        const identifier = email.trim().toLowerCase();
+
+        // Verificar rate limit antes de procesar
+        const rateCheck = checkRateLimit(identifier);
+        if (!rateCheck.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'Demasiados intentos fallidos. Por favor intente más tarde.',
+                    retryAfter: rateCheck.retryAfter,
+                },
+                { status: 429 }
+            );
+        }
+
         // Buscar usuario
         const user = await prisma.user.findUnique({
-            where: { email: email.trim().toLowerCase() },
+            where: { email: identifier },
         });
 
         if (!user) {
-            console.log(`[AUTH DEBUG] Login fallido: Usuario no encontrado (${email})`);
+            recordFailedAttempt(identifier);
             return NextResponse.json(
-                { error: 'Credenciales inválidas - Usuario no encontrado' },
+                { error: 'Credenciales inválidas' },
                 { status: 401 }
             );
         }
@@ -31,12 +46,15 @@ export async function POST(request: Request) {
         // Verificar password
         const isValid = await bcrypt.compare(password, user.passwordHash);
         if (!isValid) {
-            console.log(`[AUTH DEBUG] Login fallido: Password incorrecto para ${email}`);
+            recordFailedAttempt(identifier);
             return NextResponse.json(
-                { error: 'Credenciales inválidas - Contraseña incorrecta' },
+                { error: 'Credenciales inválidas' },
                 { status: 401 }
             );
         }
+
+        // Login exitoso: limpiar rate limit
+        clearRateLimit(identifier);
 
         // Generar JWT
         const token = generateToken({
@@ -45,7 +63,6 @@ export async function POST(request: Request) {
             role: user.role,
         });
 
-        // Crear response con cookie
         const response = NextResponse.json({
             message: 'Login exitoso',
             user: {
@@ -58,18 +75,10 @@ export async function POST(request: Request) {
         response.cookies.set(AUTH_COOKIE_NAME, token, AUTH_COOKIE_OPTIONS);
 
         return response;
-    } catch (error: any) {
-        console.error('Login error detail:', {
-            message: error.message,
-            stack: error.stack,
-            code: error.code
-        });
+    } catch (error) {
+        console.error('[Login] Error interno:', error instanceof Error ? error.message : 'Unknown error');
         return NextResponse.json(
-            {
-                error: 'Error interno del servidor',
-                debug: process.env.NODE_ENV === 'development' ? error.message : undefined,
-                detail: error.message // Temporarily expose for live debugging
-            },
+            { error: 'Error interno del servidor' },
             { status: 500 }
         );
     }

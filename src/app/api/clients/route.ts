@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
+import { apiError } from '@/lib/api/error-response';
+import { requirePermission } from '@/lib/auth/authorize';
 
 export async function GET(request: NextRequest) {
     try {
@@ -8,6 +10,9 @@ export async function GET(request: NextRequest) {
         if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
+
+        const permError = requirePermission(auth.role, 'client:read');
+        if (permError) return permError;
 
         const companyId = await getCompanyIdFromRequest(request, auth.userId);
         if (!companyId) {
@@ -26,12 +31,9 @@ export async function GET(request: NextRequest) {
         });
 
         return NextResponse.json({ clients });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error in GET /api/clients:', error);
-        return NextResponse.json(
-            { error: 'Error al obtener clientes', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error al obtener clientes', 500, error);
     }
 }
 
@@ -41,6 +43,9 @@ export async function POST(request: NextRequest) {
         if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
+
+        const permError = requirePermission(auth.role, 'client:create');
+        if (permError) return permError;
 
         const body = await request.json();
         const { name, email, phone, nit, dui, address, type, role } = body;
@@ -75,11 +80,8 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({ client }, { status: 201 });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error in POST /api/clients:', error);
-        return NextResponse.json(
-            { error: 'Error al crear cliente', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error al crear cliente', 500, error);
     }
 }

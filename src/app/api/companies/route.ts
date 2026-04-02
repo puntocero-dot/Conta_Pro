@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { cookies } from 'next/headers';
 import { encrypt, decrypt } from '@/lib/encryption/crypto';
 import { TransactionType } from '@prisma/client';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
+import { apiError } from '@/lib/api/error-response';
+import { requirePermission } from '@/lib/auth/authorize';
 
 export async function GET(request: NextRequest) {
     try {
@@ -39,12 +40,9 @@ export async function GET(request: NextRequest) {
         });
 
         return NextResponse.json({ companies: decryptedCompanies });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error in GET /api/companies:', error);
-        return NextResponse.json(
-            { error: 'Error al obtener empresas', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error al obtener empresas', 500, error);
     }
 }
 
@@ -55,6 +53,9 @@ export async function POST(request: NextRequest) {
         if (!auth) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
+
+        const permError = requirePermission(auth.role, 'company:update');
+        if (permError) return permError;
 
         const body = await request.json();
         const { legalForm, name, nit, nrc, address, economicActivity, shareCapital, municipality, department, country } = body;
@@ -111,9 +112,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        return NextResponse.json(
-            { error: 'Error interno al crear empresa', details: error.message },
-            { status: 500 }
-        );
+        return apiError('Error interno al crear empresa', 500, error);
     }
 }

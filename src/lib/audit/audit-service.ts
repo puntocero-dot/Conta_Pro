@@ -53,6 +53,7 @@ export enum AuditResult {
 
 export interface AuditLogData {
     userId?: string;
+    companyId?: string;
     action: AuditAction;
     resource: string;
     resourceId?: string;
@@ -83,6 +84,7 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
         await prisma.auditLog.create({
             data: {
                 userId: data.userId,
+                companyId: data.companyId,
                 action: data.action,
                 resource: data.resource,
                 resourceId: data.resourceId,
@@ -144,6 +146,7 @@ function maskSensitiveFields(data: unknown): unknown {
  */
 export async function getAuditLogs(filters: {
     userId?: string;
+    companyId?: string;
     action?: AuditAction;
     resource?: string;
     result?: AuditResult;
@@ -155,6 +158,7 @@ export async function getAuditLogs(filters: {
     const where: any = {};
 
     if (filters.userId) where.userId = filters.userId;
+    if (filters.companyId) where.companyId = filters.companyId;
     if (filters.action) where.action = filters.action;
     if (filters.resource) where.resource = filters.resource;
     if (filters.result) where.result = filters.result;
