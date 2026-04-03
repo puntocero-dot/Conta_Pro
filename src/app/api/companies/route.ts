@@ -5,6 +5,7 @@ import { TransactionType } from '@prisma/client';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
 import { apiError } from '@/lib/api/error-response';
 import { requirePermission } from '@/lib/auth/authorize';
+import { SV_CHART_OF_ACCOUNTS } from '@/lib/sv-chart-of-accounts';
 
 export async function GET(request: NextRequest) {
     try {
@@ -88,17 +89,47 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // Crear categorías por defecto
+        // Crear categorías por defecto con mapeo contable SV
         const categories = [
-            { name: 'Ingresos', type: 'INGRESO' as TransactionType, icon: '💰', color: '#10b981' },
-            { name: 'Gastos', type: 'EGRESO' as TransactionType, icon: '💸', color: '#ef4444' }
+            { name: 'Ventas de Bienes',      type: 'INGRESO' as TransactionType, icon: '💰', color: '#10b981', debitAccountCode: '1101', creditAccountCode: '4101' },
+            { name: 'Prestación de Servicios', type: 'INGRESO' as TransactionType, icon: '🛠', color: '#3b82f6', debitAccountCode: '1101', creditAccountCode: '4102' },
+            { name: 'Otros Ingresos',        type: 'INGRESO' as TransactionType, icon: '📈', color: '#8b5cf6', debitAccountCode: '1101', creditAccountCode: '4104' },
+            { name: 'Sueldos y Salarios',    type: 'EGRESO' as TransactionType,  icon: '👥', color: '#ef4444', debitAccountCode: '6101', creditAccountCode: '1101' },
+            { name: 'Cargas Sociales',       type: 'EGRESO' as TransactionType,  icon: '🏛', color: '#f59e0b', debitAccountCode: '6102', creditAccountCode: '1101' },
+            { name: 'Alquiler',              type: 'EGRESO' as TransactionType,  icon: '🏢', color: '#6b7280', debitAccountCode: '6107', creditAccountCode: '1101' },
+            { name: 'Servicios Básicos',     type: 'EGRESO' as TransactionType,  icon: '💡', color: '#f97316', debitAccountCode: '6108', creditAccountCode: '1101' },
+            { name: 'Telecomunicaciones',    type: 'EGRESO' as TransactionType,  icon: '📱', color: '#06b6d4', debitAccountCode: '6110', creditAccountCode: '1101' },
+            { name: 'Papelería y Útiles',    type: 'EGRESO' as TransactionType,  icon: '📄', color: '#84cc16', debitAccountCode: '6111', creditAccountCode: '1101' },
+            { name: 'Publicidad',            type: 'EGRESO' as TransactionType,  icon: '📢', color: '#ec4899', debitAccountCode: '6112', creditAccountCode: '1101' },
+            { name: 'Mantenimiento',         type: 'EGRESO' as TransactionType,  icon: '🔧', color: '#78716c', debitAccountCode: '6113', creditAccountCode: '1101' },
+            { name: 'Intereses Bancarios',   type: 'EGRESO' as TransactionType,  icon: '🏦', color: '#dc2626', debitAccountCode: '6201', creditAccountCode: '1101' },
+            { name: 'Gastos Generales',      type: 'EGRESO' as TransactionType,  icon: '💸', color: '#94a3b8', debitAccountCode: '6302', creditAccountCode: '1101' },
         ];
 
-        for (const cat of categories) {
-            await prisma.category.create({
-                data: { ...cat, companyId: company.id }
-            });
-        }
+        await prisma.category.createMany({
+            data: categories.map(cat => ({ ...cat, companyId: company.id })),
+            skipDuplicates: true,
+        });
+
+        // Sembrar catálogo de cuentas SV automáticamente
+        await prisma.account.createMany({
+            data: SV_CHART_OF_ACCOUNTS.map(a => ({
+                code: a.code,
+                name: a.name,
+                type: a.type,
+                companyId: company.id,
+            })),
+            skipDuplicates: true,
+        });
+
+        // Crear membresía del creador como CONTADOR
+        await prisma.companyMember.create({
+            data: {
+                userId: auth.userId,
+                companyId: company.id,
+                role: 'CONTADOR',
+            },
+        }).catch(() => {}); // Ignorar si ya existe
 
         return NextResponse.json({ company }, { status: 201 });
     } catch (error: any) {

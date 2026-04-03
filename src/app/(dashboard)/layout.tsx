@@ -46,6 +46,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { path: '/transactions', icon: <WalletIcon size={18} />, label: 'Transacciones', roles: ['all'], group: 'main' },
         { path: '/reports', icon: <BarChartIcon size={18} />, label: 'Reportes', roles: ['all'], group: 'main' },
         { path: '/invisible-ledger', icon: <SparklesIcon size={18} />, label: 'Libro Contable', roles: ['all'], group: 'main' },
+        { path: '/categories', icon: <FileTextIcon size={18} />, label: 'Categorías', roles: ['all'], group: 'main' },
         // ── Módulos laborales
         { path: '/payroll', icon: <UsersIcon size={18} />, label: 'Planillas', roles: ['all'], group: 'labor' },
         { path: '/provisions', icon: <AlertTriangleIcon size={18} />, label: 'Previsiones', roles: ['all'], group: 'labor' },

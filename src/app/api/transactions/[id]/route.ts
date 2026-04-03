@@ -84,6 +84,38 @@ export async function PUT(
     }
 }
 
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const auth = await getAuthFromRequest(request);
+        if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+
+        const companyId = await getCompanyIdFromRequest(request, auth.userId);
+        if (!companyId) return NextResponse.json({ error: 'Sin empresa' }, { status: 400 });
+
+        const body = await request.json();
+
+        // Solo permite actualizar isPaid (y opcionalmente dueDate/creditDays)
+        const data: any = {};
+        if (body.isPaid !== undefined) data.isPaid = Boolean(body.isPaid);
+        if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
+        if (body.creditDays !== undefined) data.creditDays = body.creditDays ? parseInt(body.creditDays) : null;
+
+        const transaction = await (prisma.transaction as any).update({
+            where: { id, companyId },
+            data,
+            include: { category: true },
+        });
+
+        return NextResponse.json({ transaction });
+    } catch (error) {
+        return apiError('Error al actualizar transacción', 500, error);
+    }
+}
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

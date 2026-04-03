@@ -22,6 +22,8 @@ interface Transaction {
     date: string;
     status: 'ACTIVE' | 'ANNULLED' | 'CORRECTED';
     clientId?: string;
+    isPaid: boolean;
+    dueDate?: string | null;
     category: {
         name: string;
         icon: string;
@@ -39,6 +41,7 @@ export default function TransactionsPage() {
     const [filter, setFilter] = useState<'ALL' | 'INGRESO' | 'EGRESO'>('ALL');
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [annullingId, setAnnullingId] = useState<string | null>(null);
+    const [togglingPaid, setTogglingPaid] = useState<string | null>(null);
 
     const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -105,6 +108,32 @@ export default function TransactionsPage() {
     const filteredTransactions = transactions.filter(t =>
         filter === 'ALL' || t.type === filter
     );
+
+    const handleTogglePaid = async (tx: Transaction) => {
+        if (!activeCompanyId) return;
+        setTogglingPaid(tx.id);
+        try {
+            const res = await fetch(`/api/transactions/${tx.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-company-id': activeCompanyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ isPaid: !tx.isPaid }),
+            });
+            if (res.ok) {
+                showToast(!tx.isPaid ? 'Marcado como cobrado/pagado ✓' : 'Marcado como pendiente', 'success');
+                fetchTransactions();
+            } else {
+                showToast('Error al actualizar estado', 'error');
+            }
+        } catch {
+            showToast('Error de conexión', 'error');
+        } finally {
+            setTogglingPaid(null);
+        }
+    };
 
     const totalIngresos = transactions.filter(t => t.type === 'INGRESO').reduce((s, t) => s + t.amount, 0);
     const totalEgresos = transactions.filter(t => t.type === 'EGRESO').reduce((s, t) => s + t.amount, 0);
@@ -212,6 +241,18 @@ export default function TransactionsPage() {
                                         {transaction.type === 'INGRESO' ? '+' : '-'}{formatCurrency(transaction.amount ?? 0)}
                                     </div>
                                     <div className={styles.actionBtn}>
+                                        {/* isPaid toggle — solo si NO está anulada */}
+                                        {transaction.status !== 'ANNULLED' && (
+                                            <button
+                                                onClick={() => handleTogglePaid(transaction)}
+                                                className="btn btn-ghost"
+                                                title={transaction.isPaid ? 'Marcar como pendiente' : 'Marcar como cobrado/pagado'}
+                                                disabled={togglingPaid === transaction.id}
+                                                style={{ color: transaction.isPaid ? '#10b981' : '#f59e0b', fontSize: '1rem' }}
+                                            >
+                                                {transaction.isPaid ? '✓' : '○'}
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => setEditingTransaction(transaction)}
                                             className="btn btn-ghost"
@@ -293,26 +334,37 @@ function TransactionModal({
             : new Date().toISOString().split('T')[0],
         categoryId: (initialData as any)?.categoryId || '',
         clientId: initialData?.clientId || '',
+        dueDate: (initialData as any)?.dueDate
+            ? new Date((initialData as any).dueDate).toISOString().split('T')[0]
+            : '',
+        isPaid: (initialData as any)?.isPaid !== false,
+        creditDays: (initialData as any)?.creditDays?.toString() || '',
     });
+    const [categories, setCategories] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        const fetchClients = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch('/api/clients', {
-                    headers: { 'x-company-id': companyId, 'X-Requested-With': 'XMLHttpRequest' },
-                });
-                if (res.ok) {
-                    const data = await res.json();
+                const [clientsRes, catsRes] = await Promise.all([
+                    fetch('/api/clients', { headers: { 'x-company-id': companyId, 'X-Requested-With': 'XMLHttpRequest' } }),
+                    fetch(`/api/categories?type=${formData.type}`, { headers: { 'x-company-id': companyId, 'X-Requested-With': 'XMLHttpRequest' } }),
+                ]);
+                if (clientsRes.ok) {
+                    const data = await clientsRes.json();
                     const targetRole = formData.type === 'INGRESO' ? 'CLIENT' : 'SUPPLIER';
                     setClients(data.clients.filter((c: any) => c.role === targetRole || c.role === 'BOTH'));
                 }
+                if (catsRes.ok) {
+                    const data = await catsRes.json();
+                    setCategories(data.categories ?? []);
+                }
             } catch (e) {
-                console.error('Error fetching clients', e);
+                console.error('Error fetching data', e);
             }
         };
-        fetchClients();
+        fetchData();
     }, [companyId, formData.type]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -368,6 +420,17 @@ function TransactionModal({
                     <input type="number" className="input" step="0.01" min="0.01" max="999999999" required value={formData.amount} onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" />
                 </div>
                 <div className="form-group">
+                    <label className="label">Categoría</label>
+                    <select className="input" value={formData.categoryId} onChange={e => setFormData(p => ({ ...p, categoryId: e.target.value }))}>
+                        <option value="">Sin categoría</option>
+                        {categories.map(c => (
+                            <option key={c.id} value={c.id}>
+                                {c.icon} {c.name}{c.debitAccountCode ? ` (DB ${c.debitAccountCode} / CR ${c.creditAccountCode})` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div className="form-group">
                     <label className="label">{formData.type === 'INGRESO' ? 'Cliente que paga' : 'Proveedor del gasto'}</label>
                     <select className="input" value={formData.clientId} onChange={e => setFormData(p => ({ ...p, clientId: e.target.value }))}>
                         <option value="">Seleccionar entidad...</option>
@@ -382,6 +445,42 @@ function TransactionModal({
                     <label className="label">Fecha</label>
                     <input type="date" className="input" required value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
                 </div>
+                <div className="form-group">
+                    <label className="label">
+                        Estado de pago
+                        <span style={{ fontWeight: 400, color: '#64748b', marginLeft: '0.5rem' }}>
+                            (para control de aging CxC/CxP)
+                        </span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                            <input type="radio" checked={formData.isPaid} onChange={() => setFormData(p => ({ ...p, isPaid: true }))} />
+                            <span style={{ color: '#10b981', fontWeight: 500 }}>✓ Cobrado/Pagado</span>
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                            <input type="radio" checked={!formData.isPaid} onChange={() => setFormData(p => ({ ...p, isPaid: false }))} />
+                            <span style={{ color: '#f59e0b', fontWeight: 500 }}>○ Pendiente</span>
+                        </label>
+                    </div>
+                </div>
+                {!formData.isPaid && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div className="form-group">
+                            <label className="label">Fecha de Vencimiento</label>
+                            <input type="date" className="input" value={formData.dueDate} onChange={e => setFormData(p => ({ ...p, dueDate: e.target.value }))} />
+                        </div>
+                        <div className="form-group">
+                            <label className="label">Días de Crédito</label>
+                            <select className="input" value={formData.creditDays} onChange={e => setFormData(p => ({ ...p, creditDays: e.target.value }))}>
+                                <option value="">—</option>
+                                <option value="15">15 días</option>
+                                <option value="30">30 días</option>
+                                <option value="60">60 días</option>
+                                <option value="90">90 días</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                     <button type="button" onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn btn-primary" style={{ flex: 2 }}>
