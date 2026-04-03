@@ -1,0 +1,80 @@
+.page { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+.toast {
+  position: fixed; top: 1rem; right: 1rem; z-index: 9999;
+  padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.875rem;
+  font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.toast.success { background: #10b981; color: #fff; }
+.toast.error   { background: #ef4444; color: #fff; }
+
+.statGrid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem; margin-bottom: 1.5rem;
+}
+.statCard {
+  background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08));
+  border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem;
+}
+.statLabel { font-size: 0.75rem; color: var(--muted, #64748b); text-transform: uppercase; letter-spacing: 0.05em; }
+.statValue { font-size: 1.4rem; font-weight: 700; color: var(--foreground, #0f172a); }
+.statValue.income { color: #10b981; }
+.statValue.expense { color: #ef4444; }
+
+.tableWrapper { overflow-x: auto; background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08)); border-radius: 12px; }
+.tableWrapper table { width: 100%; border-collapse: collapse; }
+.tableWrapper th { padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--muted, #64748b); text-transform: uppercase; background: #f8fafc; border-bottom: 1px solid var(--border, rgba(0,0,0,0.08)); }
+.tableWrapper td { padding: 0.875rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--border, rgba(0,0,0,0.06)); vertical-align: middle; }
+.tableWrapper tr:last-child td { border-bottom: none; }
+.tableWrapper tr:hover td { background: #f8fafc; }
+
+.notes { font-size: 0.75rem; color: var(--muted, #64748b); margin-top: 0.25rem; }
+.small { font-size: 0.75rem; color: var(--muted, #64748b); max-width: 160px; }
+.zero { color: #94a3b8; }
+
+.progress { height: 4px; background: #f1f5f9; border-radius: 9999px; margin-top: 4px; overflow: hidden; }
+.progressBar { height: 100%; background: #ef4444; border-radius: 9999px; transition: width 0.3s ease; }
+.pct { font-size: 0.7rem; color: var(--muted, #64748b); }
+
+.badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+.badge.active   { background: #dcfce7; color: #166534; }
+.badge.inactive { background: #f1f5f9; color: #64748b; }
+
+.btnPrimary {
+  padding: 0.5rem 1rem; background: var(--primary, #2563eb); color: #fff;
+  border: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.btnPrimary:hover { opacity: 0.88; }
+
+.btnSecondary {
+  padding: 0.5rem 1rem; background: #f1f5f9; color: var(--foreground, #0f172a);
+  border: 1px solid var(--border, rgba(0,0,0,0.1)); border-radius: 8px;
+  font-size: 0.875rem; font-weight: 500; cursor: pointer;
+}
+
+.btnDepr {
+  padding: 0.35rem 0.75rem; background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.1));
+  border-radius: 6px; font-size: 0.75rem; font-weight: 500; cursor: pointer;
+  color: var(--primary, #2563eb); transition: all 0.15s;
+}
+.btnDepr:hover { background: var(--primary, #2563eb); color: #fff; }
+.btnDepr:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.loading { text-align: center; color: var(--muted, #64748b); padding: 3rem; }
+.empty { text-align: center; padding: 4rem 2rem; color: var(--muted, #64748b); display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal h3 { font-size: 1.125rem; font-weight: 600; margin: 0 0 1.5rem; }
+
+.field { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 1rem; }
+.field label { font-size: 0.8rem; font-weight: 500; color: var(--foreground, #0f172a); }
+.field input, .field select {
+  padding: 0.5rem 0.75rem; border: 1px solid var(--border, rgba(0,0,0,0.12));
+  border-radius: 8px; font-size: 0.875rem; background: #fff; outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--primary, #2563eb); }
+
+.fieldRow { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.modalActions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }

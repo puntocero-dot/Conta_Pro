@@ -42,6 +42,7 @@ model Company {
   payrolls       Payroll[]
   loans          Loan[]
   provisions     Provision[]
+  fixedAssets    FixedAsset[]
 
   @@index([groupId])
 }
@@ -92,19 +93,21 @@ model AccountClient {
 }
 
 model Category {
-  id           String          @id @default(uuid())
-  name         String
-  type         TransactionType
-  color        String          @default("#3b82f6")
-  icon         String          @default("📁")
-  companyId    String
-  createdAt    DateTime        @default(now())
-  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
+  id                String          @id @default(uuid())
+  name              String
+  type              TransactionType
+  color             String          @default("#3b82f6")
+  icon              String          @default("📁")
+  companyId         String
+  createdAt         DateTime        @default(now())
+  debitAccountCode  String?         // cuenta que se debita (catálogo SV)
+  creditAccountCode String?         // cuenta que se acredita (catálogo SV)
+  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
 }
 
 model Transaction {
-  id          String          @id @default(uuid())
+  id          String            @id @default(uuid())
   type        TransactionType
   status      TransactionStatus @default(ACTIVE)
   amount      Float
@@ -115,16 +118,20 @@ model Transaction {
   userId      String
   attachments Json?
   metadata    Json?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  category    Category        @relation(fields: [categoryId], references: [id])
-  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dueDate     DateTime?         // fecha de vencimiento (CxC/CxP aging)
+  isPaid      Boolean           @default(true)
+  creditDays  Int?              // 30, 60, 90 días crédito
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  category    Category          @relation(fields: [categoryId], references: [id])
+  company     Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   clientId    String?
-  client      AccountClient?  @relation(fields: [clientId], references: [id])
+  client      AccountClient?    @relation(fields: [clientId], references: [id])
 
   @@index([companyId])
   @@index([userId])
   @@index([date])
+  @@index([isPaid])
 }
 
 model AuditLog {
@@ -342,6 +349,47 @@ model Provision {
 }
 
 // ─── NUEVOS ENUMS ────────────────────────────────────────────────────────────
+
+// ─── ACTIVOS FIJOS ────────────────────────────────────────────────────────────
+
+model FixedAsset {
+  id              String             @id @default(uuid())
+  companyId       String
+  name            String
+  accountCode     String             // 1202, 1203, 1204, 1205, 1206, 1207
+  purchaseDate    DateTime
+  purchaseCost    Float
+  residualValue   Float              @default(0)
+  usefulLifeYears Int                // vida útil fiscal SV
+  accumulatedDepr Float              @default(0)
+  bookValue       Float              // purchaseCost - accumulatedDepr
+  status          String             @default("ACTIVE") // ACTIVE, SOLD, SCRAPPED
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  depreciations   AssetDepreciation[]
+
+  @@index([companyId])
+}
+
+model AssetDepreciation {
+  id              String     @id @default(uuid())
+  assetId         String
+  year            Int
+  month           Int
+  amount          Float
+  accumulatedDepr Float
+  journalEntryId  String?
+  createdAt       DateTime   @default(now())
+  asset           FixedAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@unique([assetId, year, month])
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────────────
 
 enum PayrollStatus {
   DRAFT

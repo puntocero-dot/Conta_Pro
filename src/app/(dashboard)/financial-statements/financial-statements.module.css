@@ -1,0 +1,61 @@
+.page { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+.loading { text-align: center; color: var(--muted, #64748b); padding: 3rem; }
+
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.tab, .tabActive {
+  padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border, rgba(0,0,0,0.1));
+}
+.tab { background: #fff; color: var(--muted, #64748b); }
+.tabActive { background: var(--primary, #2563eb); color: #fff; border-color: transparent; }
+
+.equationBadge {
+  display: inline-block; padding: 0.4rem 1rem; border-radius: 8px; font-size: 0.8rem;
+  font-weight: 600; margin-bottom: 1rem;
+}
+.balanced  { background: #dcfce7; color: #166534; }
+.unbalanced { background: #fee2e2; color: #991b1b; }
+
+.statementGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 900px) { .statementGrid { grid-template-columns: 1fr; } }
+
+.statementSection {
+  background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08));
+  border-radius: 12px; overflow: hidden;
+}
+.statementSection h3 {
+  margin: 0; padding: 1rem; font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em; background: #f8fafc;
+  border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
+  color: var(--muted, #64748b);
+}
+
+.singleStatement {
+  background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08));
+  border-radius: 12px; overflow: hidden; max-width: 720px;
+}
+
+.stmtTable { width: 100%; border-collapse: collapse; }
+.stmtTable tr td { padding: 0.5rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--border, rgba(0,0,0,0.04)); }
+.stmtTable tr:last-child td { border-bottom: none; }
+.stmtTable .amount { text-align: right; font-variant-numeric: tabular-nums; min-width: 120px; }
+
+.bold td { font-weight: 700; background: #f8fafc; }
+.income td { color: #16a34a; }
+.expense td { color: #dc2626; }
+
+.separator td { padding: 0.125rem 0; }
+.separator hr { border: none; border-top: 1px solid var(--border, rgba(0,0,0,0.08)); margin: 0; }
+
+.btnPrint {
+  padding: 0.5rem 1rem; background: #fff; color: var(--primary, #2563eb);
+  border: 1px solid var(--primary, #2563eb); border-radius: 8px;
+  font-size: 0.875rem; font-weight: 500; cursor: pointer;
+}
+.btnPrint:hover { background: var(--primary, #2563eb); color: #fff; }
+
+@media print {
+  .tabs, .btnPrint { display: none; }
+  .statementGrid { grid-template-columns: 1fr 1fr; }
+  .page { padding: 0; }
+}

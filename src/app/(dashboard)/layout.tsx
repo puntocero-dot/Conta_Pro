@@ -51,6 +51,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { path: '/provisions', icon: <AlertTriangleIcon size={18} />, label: 'Previsiones', roles: ['all'], group: 'labor' },
         // ── Financiero
         { path: '/loans', icon: <DollarSignIcon size={18} />, label: 'Préstamos', roles: ['all'], group: 'finance' },
+        // ── Contabilidad
+        { path: '/fixed-assets', icon: <BuildingIcon size={18} />, label: 'Activos Fijos', roles: ['all'], group: 'accounting' },
+        { path: '/receivables', icon: <WalletIcon size={18} />, label: 'CxC / CxP', roles: ['all'], group: 'accounting' },
+        { path: '/financial-statements', icon: <FileTextIcon size={18} />, label: 'Estados Financieros', roles: ['all'], group: 'accounting' },
+        { path: '/financial-metrics', icon: <BarChartIcon size={18} />, label: 'Métricas EBITDA', roles: ['all'], group: 'accounting' },
+        // ── Fiscal
+        { path: '/tax-reports', icon: <ClipboardIcon size={18} />, label: 'Reportes Fiscales', roles: ['all'], group: 'fiscal' },
         // ── Administración
         { path: '/companies', icon: <BuildingIcon size={18} />, label: 'Empresas', roles: ['all'], group: 'admin' },
         { path: '/clients', icon: <FileTextIcon size={18} />, label: 'Clientes', roles: ['all'], group: 'admin' },
@@ -134,7 +141,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                 <div key={group}>
                                     {sidebarOpen && group !== 'main' && (
                                         <p className={styles.navGroupLabel}>
-                                            {group === 'labor' ? 'LABORAL' : group === 'finance' ? 'FINANCIERO' : 'ADMINISTRACIÓN'}
+                                            {group === 'labor' ? 'LABORAL'
+                                              : group === 'finance' ? 'FINANCIERO'
+                                              : group === 'accounting' ? 'CONTABILIDAD'
+                                              : group === 'fiscal' ? 'FISCAL'
+                                              : 'ADMINISTRACIÓN'}
                                         </p>
                                     )}
                                     {items.map(item => (

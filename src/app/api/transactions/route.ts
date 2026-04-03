@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
 import { LedgerService } from '@/lib/accounting/ledger';
+import { createAutoJournalEntry } from '@/lib/auto-journal';
 import { apiError } from '@/lib/api/error-response';
 import { requirePermission } from '@/lib/auth/authorize';
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
         if (permError) return permError;
 
         const body = await request.json();
-        const { type, amount, description, date, categoryId, clientId } = body;
+        const { type, amount, description, date, categoryId, clientId, dueDate, isPaid, creditDays } = body;
 
         if (!type || !amount || !description || !date) {
             return NextResponse.json(
@@ -115,6 +116,9 @@ export async function POST(request: NextRequest) {
                 companyId,
                 userId: auth.userId,
                 clientId: clientId || null,
+                dueDate: dueDate ? new Date(dueDate) : null,
+                isPaid: isPaid !== undefined ? Boolean(isPaid) : true,
+                creditDays: creditDays ? parseInt(creditDays.toString()) : null,
             },
             include: {
                 category: true,
@@ -122,9 +126,26 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Procesar en el Ledger (Contabilidad Invisible)
+        // Auto-asiento contable usando catálogo SV
+        const trans = transaction as any;
+        await createAutoJournalEntry(
+            {
+                id: transaction.id,
+                amount: transaction.amount,
+                description,
+                date: transaction.date,
+                companyId,
+                type,
+            },
+            {
+                name: trans.category?.name || 'Varios',
+                debitAccountCode: trans.category?.debitAccountCode || null,
+                creditAccountCode: trans.category?.creditAccountCode || null,
+            }
+        );
+
+        // Ledger legacy (mantener por compatibilidad)
         try {
-            const trans = transaction as any;
             await LedgerService.processTransaction({
                 companyId,
                 amount: transaction.amount,
@@ -133,9 +154,8 @@ export async function POST(request: NextRequest) {
                 reference: transaction.id,
                 date: transaction.date,
             });
-        } catch (ledgerError: any) {
-            console.warn('⚠️ Ledger Warning:', ledgerError.message);
-            // No bloqueamos la respuesta si falla la contabilidad automática
+        } catch (ledgerError: unknown) {
+            console.warn('⚠️ Ledger Legacy Warning:', ledgerError instanceof Error ? ledgerError.message : ledgerError);
         }
 
         return NextResponse.json({ transaction }, { status: 201 });
