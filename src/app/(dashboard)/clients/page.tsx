@@ -354,6 +354,7 @@ function EditClientModal({
         dui: client.dui || '',
         address: client.address || '',
         role: client.role,
+        legalForm: (client as any).legalForm || 'SA',
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -399,6 +400,19 @@ function EditClientModal({
                         <option value="BOTH">Ambos</option>
                     </select>
                 </div>
+
+                {formData.type === 'COMPANY' && (
+                    <div className="form-group">
+                        <label className="label">Forma Legal</label>
+                        <select className="input" value={(formData as any).legalForm} onChange={e => setFormData(p => ({ ...p, legalForm: e.target.value }))}>
+                            <option value="SA">Sociedad Anónima (S.A.)</option>
+                            <option value="SAS">Sociedad por Acciones Simplificada (S.A.S.)</option>
+                            <option value="SRL">Sociedad de R.L.</option>
+                            <option value="PERSONA_NATURAL">Persona Natural (Comerciante)</option>
+                            <option value="OTHER">Otro</option>
+                        </select>
+                    </div>
+                )}
 
                 <div className="form-group">
                     <label className="label">Nombre o Razón Social</label>
@@ -461,6 +475,7 @@ function NewClientModal({
         dui: '',
         address: '',
         role: 'CLIENT' as 'CLIENT' | 'SUPPLIER' | 'BOTH',
+        legalForm: 'SA',
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -506,6 +521,19 @@ function NewClientModal({
                         <option value="BOTH">Ambos</option>
                     </select>
                 </div>
+
+                {formData.type === 'COMPANY' && (
+                    <div className="form-group">
+                        <label className="label">Forma Legal</label>
+                        <select className="input" value={(formData as any).legalForm} onChange={e => setFormData(p => ({ ...p, legalForm: e.target.value }))}>
+                            <option value="SA">Sociedad Anónima (S.A.)</option>
+                            <option value="SAS">Sociedad por Acciones Simplificada (S.A.S.)</option>
+                            <option value="SRL">Sociedad de R.L.</option>
+                            <option value="PERSONA_NATURAL">Persona Natural (Comerciante)</option>
+                            <option value="OTHER">Otro</option>
+                        </select>
+                    </div>
+                )}
 
                 <div className="form-group">
                     <label className="label">Nombre o Razón Social</label>

@@ -47,15 +47,30 @@ export default function DashboardPage() {
             if (!activeCompanyId) return;
             setIsFetching(true);
             try {
-                const response = await fetch(`/api/reports?startDate=${startDate}&endDate=${endDate}`, {
+                const isGlobal = activeCompanyId === 'GLOBAL';
+                const url = isGlobal 
+                    ? '/api/admin/global-stats' 
+                    : `/api/reports?startDate=${startDate}&endDate=${endDate}`;
+                
+                const response = await fetch(url, {
                     headers: {
-                        'x-company-id': activeCompanyId,
+                        'x-company-id': isGlobal ? '' : activeCompanyId,
                         'X-Requested-With': 'XMLHttpRequest',
                     }
                 });
+                
                 if (response.ok) {
                     const data = await response.json();
-                    setStats(data);
+                    if (isGlobal) {
+                        setStats({
+                            totalIngresos: data.globalIncome,
+                            totalEgresos: data.globalExpense,
+                            balance: data.globalIncome - data.globalExpense,
+                            transactionCount: data.totalTransactions,
+                        });
+                    } else {
+                        setStats(data);
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching dashboard stats:', error);
@@ -90,8 +105,10 @@ export default function DashboardPage() {
     return (
         <div>
             <PageHeader
-                title={`Hola, ${user.email?.split('@')[0]}`}
-                subtitle="Aquí tienes un resumen del período seleccionado."
+                title={activeCompanyId === 'GLOBAL' ? 'Consolidado Global (Admin)' : `Hola, ${user.email?.split('@')[0]}`}
+                subtitle={activeCompanyId === 'GLOBAL' 
+                    ? 'Resumen administrativo de todo el sistema Conta Pro.' 
+                    : "Aquí tienes un resumen del período seleccionado."}
             />
 
             {stats && (

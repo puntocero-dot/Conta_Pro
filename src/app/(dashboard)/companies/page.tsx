@@ -52,6 +52,8 @@ export default function CompaniesPage() {
     const [showNewModal, setShowNewModal] = useState(false);
     const [showNewGroupModal, setShowNewGroupModal] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [editingMember, setEditingMember] = useState<Member | null>(null);
+    const [resettingPasswordMember, setResettingPasswordMember] = useState<Member | null>(null);
 
     const fetchAll = useCallback(async () => {
         setLoading(true);
@@ -143,6 +145,37 @@ export default function CompaniesPage() {
             fetchMembers();
         } else {
             showToast('Error al remover miembro', 'error');
+        }
+    };
+
+    const handleUpdateMemberRole = async (memberId: string, newRole: string) => {
+        if (!activeCompanyId) return;
+        const res = await fetch(`/api/companies/${activeCompanyId}/members/${memberId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ role: newRole }),
+        });
+        if (res.ok) {
+            showToast('Rol actualizado', 'success');
+            fetchMembers();
+            setEditingMember(null);
+        } else {
+            showToast('Error al actualizar rol', 'error');
+        }
+    };
+
+    const handleResetPassword = async (userId: string, newPass: string) => {
+        const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ newPassword: newPass }),
+        });
+        if (res.ok) {
+            showToast('Contraseña restablecida correctamente', 'success');
+            setResettingPasswordMember(null);
+        } else {
+            const d = await res.json();
+            showToast(d.error || 'Error al resetear contraseña', 'error');
         }
     };
 
@@ -374,13 +407,25 @@ export default function CompaniesPage() {
                                             <span className={styles.roleBadge}>{member.role}</span>
                                         </div>
                                     </div>
-                                    <button
-                                        className="btn btn-ghost"
-                                        style={{ fontSize: '0.75rem', color: '#dc2626' }}
-                                        onClick={() => handleRemoveMember(member.id)}
-                                    >
-                                        Remover
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={() => setEditingMember(member)}>
+                                            ✏️ Editar
+                                        </button>
+                                        <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={() => setResettingPasswordMember(member)}>
+                                            🔑 Clave
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost"
+                                            style={{ fontSize: '0.8125rem', color: '#dc2626' }}
+                                            onClick={() => {
+                                                if (confirm(`¿Remover a ${member.user.email} de la empresa?`)) {
+                                                    handleRemoveMember(member.id);
+                                                }
+                                            }}
+                                        >
+                                            Remover
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -425,6 +470,22 @@ export default function CompaniesPage() {
                         showToast('Miembro invitado correctamente', 'success');
                     }}
                     onError={msg => showToast(msg, 'error')}
+                />
+            )}
+
+            {editingMember && (
+                <EditMemberRoleModal
+                    member={editingMember}
+                    onClose={() => setEditingMember(null)}
+                    onSave={(newRole: string) => handleUpdateMemberRole(editingMember.id, newRole)}
+                />
+            )}
+
+            {resettingPasswordMember && (
+                <ResetPasswordModal
+                    member={resettingPasswordMember}
+                    onClose={() => setResettingPasswordMember(null)}
+                    onReset={(pass: string) => handleResetPassword(resettingPasswordMember.user.id, pass)}
                 />
             )}
         </div>
@@ -635,8 +696,10 @@ function NewCompanyModal({
 
     const legalForms = [
         { value: 'SA', label: 'Sociedad Anónima (S.A.)' },
+        { value: 'SAS', label: 'Sociedad por Acciones Simplificada (S.A.S.)' },
         { value: 'SRL', label: 'Sociedad de R.L. (S. de R.L.)' },
         { value: 'EIRL', label: 'Empresa Individual de R.L. (E.I.R.L.)' },
+        { value: 'PERSONA_NATURAL', label: 'Persona Natural (Comerciante Individual)' },
         { value: 'SC', label: 'Sociedad Colectiva' },
         { value: 'SCS', label: 'Sociedad en Comandita Simple' },
     ];
@@ -670,9 +733,11 @@ function NewCompanyModal({
         }
 
         const nrcClean = formData.nrc.replace(/[^0-9]/g, '');
-        if (nrcClean.length < 6 || nrcClean.length > 8) {
-            setError('NRC inválido. Debe contener entre 6 y 8 dígitos.');
-            return;
+        if (formData.legalForm !== 'PERSONA_NATURAL') {
+            if (nrcClean.length < 6 || nrcClean.length > 8) {
+                setError('NRC inválido. Debe contener entre 6 y 8 dígitos.');
+                return;
+            }
         }
 
         setSubmitting(true);
@@ -723,8 +788,8 @@ function NewCompanyModal({
                         <input type="text" className="input" value={formData.nit} onChange={e => setFormData(p => ({ ...p, nit: e.target.value }))} placeholder="0614-210188-101-2" maxLength={17} required />
                     </div>
                     <div className="form-group">
-                        <label className="label">NRC *</label>
-                        <input type="text" className="input" value={formData.nrc} onChange={e => setFormData(p => ({ ...p, nrc: e.target.value }))} placeholder="123456-7" maxLength={10} required />
+                        <label className="label">NRC {formData.legalForm === 'PERSONA_NATURAL' ? '(Opcional)' : '*'}</label>
+                        <input type="text" className="input" value={formData.nrc} onChange={e => setFormData(p => ({ ...p, nrc: e.target.value }))} placeholder="123456-7" maxLength={10} required={formData.legalForm !== 'PERSONA_NATURAL'} />
                     </div>
                 </div>
 
@@ -768,6 +833,53 @@ function NewCompanyModal({
                     </button>
                 </div>
             </form>
+        </Modal>
+    );
+}
+
+function EditMemberRoleModal({ member, onClose, onSave }: any) {
+    const [role, setRole] = useState(member.role);
+    return (
+        <Modal isOpen onClose={onClose} title="Editar Rol de Miembro" size="sm">
+            <div className="form-group">
+                <label className="label">Rol en la empresa</label>
+                <select className="input" value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="CONTADOR">Contador</option>
+                    <option value="AUDITOR">Auditor</option>
+                    <option value="CLIENTE">Cliente (Solo Lectura)</option>
+                    <option value="DUEÑO">Dueño (Admin de Empresa)</option>
+                </select>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button onClick={() => onSave(role)} className="btn btn-primary" style={{ flex: 2 }}>Guardar Cambios</button>
+            </div>
+        </Modal>
+    );
+}
+
+function ResetPasswordModal({ member, onClose, onReset }: any) {
+    const [pass, setPass] = useState('');
+    return (
+        <Modal isOpen onClose={onClose} title="Restablecer Contraseña" size="sm">
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem' }}>
+                Establece una nueva contraseña para <strong>{member.user.email}</strong>.
+            </p>
+            <div className="form-group">
+                <label className="label">Nueva Contraseña</label>
+                <input type="password" className="input" value={pass} onChange={e => setPass(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button 
+                    disabled={pass.length < 6} 
+                    onClick={() => onReset(pass)} 
+                    className="btn btn-primary" 
+                    style={{ flex: 2 }}
+                >
+                    Actualizar Contraseña
+                </button>
+            </div>
         </Modal>
     );
 }

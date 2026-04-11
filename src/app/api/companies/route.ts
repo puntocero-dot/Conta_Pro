@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
         const { legalForm, name, nit, nrc, address, economicActivity, shareCapital, municipality, department, country } = body;
 
         // Validación de campos obligatorios
-        if (!name || !nit || !nrc || !legalForm || !economicActivity || !address || !department || !municipality) {
+        const isPersonaNatural = legalForm === 'PERSONA_NATURAL';
+        if (!name || !nit || (!isPersonaNatural && !nrc) || !legalForm || !economicActivity || !address || !department || !municipality) {
             return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
         }
 

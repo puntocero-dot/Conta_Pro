@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useCompany } from '@/context/CompanyContext';
+import { useAuth } from '@/hooks/useAuth';
 import styles from './CompanySelector.module.css';
 
 interface CompanySelectorProps {
@@ -10,6 +11,8 @@ interface CompanySelectorProps {
 
 export function CompanySelector({ isCollapsed }: CompanySelectorProps) {
     const { companies, companyGroups, ungroupedCompanies, activeCompanyId, setActiveCompanyId, isLoading } = useCompany();
+    const { user } = useAuth();
+    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
     if (isLoading) {
         return <div className={styles.skeleton}>{!isCollapsed && 'Cargando empresas...'}</div>;
@@ -29,6 +32,9 @@ export function CompanySelector({ isCollapsed }: CompanySelectorProps) {
                 onChange={(e) => setActiveCompanyId(e.target.value)}
                 className={styles.select}
             >
+                {isSuperAdmin && (
+                    <option value="GLOBAL">🌐 Vista Global (Admin)</option>
+                )}
                 {hasGroups ? (
                     <>
                         {companyGroups.map((group) =>
