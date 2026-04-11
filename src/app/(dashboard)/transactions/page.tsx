@@ -108,7 +108,7 @@ export default function TransactionsPage() {
     const filteredTransactions = transactions.filter(t => {
         if (filter === 'ALL') return true;
         if (filter === 'PENDING_APPROVAL') return t.status === 'PENDING_APPROVAL';
-        return t.type === filter;
+        return (t.type as string) === filter;
     });
 
     const handleTogglePaid = async (tx: Transaction) => {
