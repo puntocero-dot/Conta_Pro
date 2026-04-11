@@ -20,7 +20,7 @@ interface Transaction {
     amount: number;
     description: string;
     date: string;
-    status: 'ACTIVE' | 'ANNULLED' | 'CORRECTED';
+    status: 'ACTIVE' | 'ANNULLED' | 'CORRECTED' | 'PENDING_APPROVAL';
     clientId?: string;
     isPaid: boolean;
     dueDate?: string | null;
@@ -105,9 +105,11 @@ export default function TransactionsPage() {
         }
     }, [activeCompanyId, startDate, endDate, fetchTransactions]);
 
-    const filteredTransactions = transactions.filter(t =>
-        filter === 'ALL' || t.type === filter
-    );
+    const filteredTransactions = transactions.filter(t => {
+        if (filter === 'ALL') return true;
+        if (filter === 'PENDING_APPROVAL') return t.status === 'PENDING_APPROVAL';
+        return t.type === filter;
+    });
 
     const handleTogglePaid = async (tx: Transaction) => {
         if (!activeCompanyId) return;
@@ -135,8 +137,9 @@ export default function TransactionsPage() {
         }
     };
 
-    const totalIngresos = transactions.filter(t => t.type === 'INGRESO').reduce((s, t) => s + t.amount, 0);
-    const totalEgresos = transactions.filter(t => t.type === 'EGRESO').reduce((s, t) => s + t.amount, 0);
+    const totalIngresos = transactions.filter(t => t.type === 'INGRESO' && t.status !== 'ANNULLED').reduce((s, t) => s + t.amount, 0);
+    const totalEgresos = transactions.filter(t => t.type === 'EGRESO' && t.status !== 'ANNULLED').reduce((s, t) => s + t.amount, 0);
+    const pendingApprovalCount = transactions.filter(t => t.status === 'PENDING_APPROVAL').length;
     const balance = totalIngresos - totalEgresos;
 
     if (companyLoading || (loading && transactions.length === 0 && activeCompanyId)) {
@@ -194,9 +197,10 @@ export default function TransactionsPage() {
                                 { value: 'ALL', label: 'Todas' },
                                 { value: 'INGRESO', label: 'Ingresos' },
                                 { value: 'EGRESO', label: 'Egresos' },
+                                { value: 'PENDING_APPROVAL', label: `Pendientes (${pendingApprovalCount})` },
                             ]}
                             value={filter}
-                            onChange={(v) => setFilter(v as 'ALL' | 'INGRESO' | 'EGRESO')}
+                            onChange={(v) => setFilter(v as any)}
                         />
                     </div>
 
@@ -228,6 +232,9 @@ export default function TransactionsPage() {
                                             {transaction.status === 'CORRECTED' && (
                                                 <span className={styles.badgeCorrected}>Corregida</span>
                                             )}
+                                            {transaction.status === 'PENDING_APPROVAL' && (
+                                                <span className={styles.badgePending}>Bot: Pendiente Approval</span>
+                                            )}
                                         </h4>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                             <span className={styles.transactionCategory}>{transaction.category?.name || 'General'}</span>
@@ -241,8 +248,26 @@ export default function TransactionsPage() {
                                         {transaction.type === 'INGRESO' ? '+' : '-'}{formatCurrency(transaction.amount ?? 0)}
                                     </div>
                                     <div className={styles.actionBtn}>
-                                        {/* isPaid toggle — solo si NO está anulada */}
-                                        {transaction.status !== 'ANNULLED' && (
+                                        {transaction.status === 'PENDING_APPROVAL' && (
+                                            <button
+                                              onClick={async () => {
+                                                if (confirm('¿Deseas aprobar esta transacción registrada por el bot?')) {
+                                                  const res = await fetch(`/api/transactions/${transaction.id}`, {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json', 'x-company-id': activeCompanyId || '' },
+                                                    body: JSON.stringify({ status: 'ACTIVE' })
+                                                  });
+                                                  if (res.ok) { showToast('Transacción aprobada ✓', 'success'); fetchTransactions(); }
+                                                }
+                                              }}
+                                              className="btn btn-primary"
+                                              style={{ padding: '4px 12px', fontSize: 12 }}
+                                            >
+                                              Aprobar
+                                            </button>
+                                        )}
+                                        {/* isPaid toggle — solo si NO está anulada ni pendiente */}
+                                        {transaction.status !== 'ANNULLED' && transaction.status !== 'PENDING_APPROVAL' && (
                                             <button
                                                 onClick={() => handleTogglePaid(transaction)}
                                                 className="btn btn-ghost"
@@ -256,7 +281,7 @@ export default function TransactionsPage() {
                                         <button
                                             onClick={() => setEditingTransaction(transaction)}
                                             className="btn btn-ghost"
-                                            title="Corregir"
+                                            title="Corregir/Editar"
                                             disabled={transaction.status === 'ANNULLED'}
                                         >
                                             <PencilIcon size={15} />

@@ -28,7 +28,7 @@ interface BookType {
 }
 
 export default function LegalBooksPage() {
-  const { selectedCompanyId } = useCompany();
+  const { activeCompanyId } = useCompany();
   const [books, setBooks] = useState<LegalBook[]>([]);
   const [bookTypes, setBookTypes] = useState<BookType[]>([]);
   const [activeTab, setActiveTab] = useState('ACTAS');
@@ -37,11 +37,11 @@ export default function LegalBooksPage() {
   const [form, setForm] = useState({ type: 'ACTAS', title: '', content: '', folioNumber: '', date: '' });
 
   const fetchBooks = useCallback(async () => {
-    if (!selectedCompanyId) return;
+    if (!activeCompanyId) return;
     setLoading(true);
     try {
       const res = await fetch('/api/legal-books', {
-        headers: { 'x-company-id': selectedCompanyId },
+        headers: { 'x-company-id': activeCompanyId },
       });
       const data = await res.json();
       setBooks(data.books || []);
@@ -51,7 +51,7 @@ export default function LegalBooksPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCompanyId]);
+  }, [activeCompanyId]);
 
   useEffect(() => { fetchBooks(); }, [fetchBooks]);
 
@@ -62,7 +62,7 @@ export default function LegalBooksPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-company-id': selectedCompanyId || '',
+          'x-company-id': activeCompanyId || '',
         },
         body: JSON.stringify(form),
       });

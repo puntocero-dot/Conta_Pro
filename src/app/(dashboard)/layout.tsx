@@ -65,6 +65,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         // ── Cumplimiento
         { path: '/legal-books', icon: <ClipboardIcon size={18} />, label: 'Libros Legales', roles: ['all'], group: 'compliance' },
         { path: '/compliance', icon: <ShieldIcon size={18} />, label: 'Anti-Lavado', roles: ['all'], group: 'compliance' },
+        { path: '/compliance/telegram', icon: <SparklesIcon size={18} />, label: 'Bot de Telegram', roles: ['all'], group: 'compliance' },
         { path: '/security-dashboard', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN'], group: 'admin' },
         { path: '/security/audit-logs', icon: <ClipboardIcon size={18} />, label: 'Auditoría', roles: ['AUDITOR'], group: 'admin' },
     ];
@@ -82,6 +83,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             '/loans': 'Préstamos',
             '/provisions': 'Previsiones Laborales',
             '/compliance': 'Cumplimiento Anti-Lavado',
+            '/compliance/telegram': 'Integración bookkeeping_bot',
             '/legal-books': 'Libros Legales y Actas',
         };
         if (securityTitles[path]) return securityTitles[path];

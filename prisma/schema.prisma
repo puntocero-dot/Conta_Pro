@@ -13,6 +13,7 @@ model User {
   email          String          @unique
   passwordHash   String
   role           Role            @default(CLIENTE)
+  telegramId     String?         @unique
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   auditLogs      AuditLog[]
@@ -238,10 +239,12 @@ enum TransactionStatus {
   ACTIVE
   ANNULLED
   CORRECTED
+  PENDING_APPROVAL
 }
 
 enum CompanyType {
   SA              // Sociedad Anónima
+  SAS             // Sociedad por Acciones Simplificadas
   SRL             // Sociedad de Responsabilidad Limitada
   SNC             // Sociedad en Nombre Colectivo
   COOPERATIVA
@@ -520,4 +523,12 @@ model TaxRule {
 
   @@index([countryCode, ruleType])
   @@unique([countryCode, ruleType, effectiveFrom])
+}
+model BotSession {
+  id         String   @id @default(uuid())
+  telegramId String   @unique
+  step       String   // Estado en la máquina (ej: SELECT_COMPANY, ENTER_AMOUNT...)
+  data       Json?    // Contexto temporal (companyId, categoryId, amount)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

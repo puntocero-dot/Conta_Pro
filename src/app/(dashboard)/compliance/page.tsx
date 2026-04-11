@@ -38,7 +38,7 @@ const ALERT_ICONS: Record<string, string> = {
 };
 
 export default function CompliancePage() {
-  const { selectedCompanyId } = useCompany();
+  const { activeCompanyId } = useCompany();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,15 +46,16 @@ export default function CompliancePage() {
   const [showBypassModal, setShowBypassModal] = useState(false);
   const [bypassReason, setBypassReason] = useState('');
   const [bypassToken, setBypassToken] = useState('');
+  const [kycSearch, setKycSearch] = useState('');
 
   const fetchData = useCallback(async () => {
-    if (!selectedCompanyId) return;
+    if (!activeCompanyId) return;
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (filter) params.set('status', filter);
       const res = await fetch(`/api/compliance?${params}`, {
-        headers: { 'x-company-id': selectedCompanyId },
+        headers: { 'x-company-id': activeCompanyId },
       });
       const data = await res.json();
       setAlerts(data.alerts || []);
@@ -64,7 +65,7 @@ export default function CompliancePage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCompanyId, filter]);
+  }, [activeCompanyId, filter]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -74,7 +75,7 @@ export default function CompliancePage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-company-id': selectedCompanyId || '',
+          'x-company-id': activeCompanyId || '',
         },
         body: JSON.stringify({ alertId, status }),
       });
@@ -91,7 +92,7 @@ export default function CompliancePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-company-id': selectedCompanyId || '',
+          'x-company-id': activeCompanyId || '',
         },
         body: JSON.stringify({
           action: 'GENERATE_BYPASS_TOKEN',
