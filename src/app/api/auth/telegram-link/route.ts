@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { randomInt } from 'crypto';
 
 export async function POST(request: NextRequest) {

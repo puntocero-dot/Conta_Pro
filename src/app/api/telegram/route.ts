@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import * as tg from '@/lib/telegram';
 import { extractInvoiceData } from '@/lib/gemini';
 import { CompanyType, Role, TransactionStatus, TransactionType } from '@prisma/client';

@@ -8,7 +8,7 @@ import {
   getSession,
   resetSession
 } from '@/lib/telegram';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { extractInvoiceData } from '@/lib/gemini';
 import { calcFinancialMetrics } from '@/lib/financial-metrics';
 
