@@ -62,6 +62,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         // ── Administración
         { path: '/companies', icon: <BuildingIcon size={18} />, label: 'Empresas', roles: ['all'], group: 'admin' },
         { path: '/clients', icon: <FileTextIcon size={18} />, label: 'Clientes', roles: ['all'], group: 'admin' },
+        // ── Cumplimiento
+        { path: '/legal-books', icon: <ClipboardIcon size={18} />, label: 'Libros Legales', roles: ['all'], group: 'compliance' },
+        { path: '/compliance', icon: <ShieldIcon size={18} />, label: 'Anti-Lavado', roles: ['all'], group: 'compliance' },
         { path: '/security-dashboard', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN'], group: 'admin' },
         { path: '/security/audit-logs', icon: <ClipboardIcon size={18} />, label: 'Auditoría', roles: ['AUDITOR'], group: 'admin' },
     ];
@@ -78,6 +81,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             '/payroll': 'Planillas',
             '/loans': 'Préstamos',
             '/provisions': 'Previsiones Laborales',
+            '/compliance': 'Cumplimiento Anti-Lavado',
+            '/legal-books': 'Libros Legales y Actas',
         };
         if (securityTitles[path]) return securityTitles[path];
         const item = menuItems.find(i => i.path === path || path.startsWith(i.path + '/'));
@@ -146,6 +151,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                               : group === 'finance' ? 'FINANCIERO'
                                               : group === 'accounting' ? 'CONTABILIDAD'
                                               : group === 'fiscal' ? 'FISCAL'
+                                              : group === 'compliance' ? 'CUMPLIMIENTO'
                                               : 'ADMINISTRACIÓN'}
                                         </p>
                                     )}

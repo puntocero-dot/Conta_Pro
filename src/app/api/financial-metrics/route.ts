@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       buildCashFlow(companyId, startDate, endDate),
     ]);
 
-    const metrics = calcFinancialMetrics(bs, is, cf);
+    const metrics = await calcFinancialMetrics(bs, is, cf, companyId);
 
     return NextResponse.json({ metrics, period: { startDate: startDate.toISOString(), endDate: endDate.toISOString() } });
   } catch (error) {

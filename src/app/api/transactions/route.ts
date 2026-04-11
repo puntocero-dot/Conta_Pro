@@ -5,6 +5,7 @@ import { LedgerService } from '@/lib/accounting/ledger';
 import { createAutoJournalEntry } from '@/lib/auto-journal';
 import { apiError } from '@/lib/api/error-response';
 import { requirePermission } from '@/lib/auth/authorize';
+import { checkTransactionCompliance } from '@/lib/sv-compliance';
 
 export async function GET(request: NextRequest) {
     try {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
         if (permError) return permError;
 
         const body = await request.json();
-        const { type, amount, description, date, categoryId, clientId, dueDate, isPaid, creditDays } = body;
+        const { type, amount, description, date, categoryId, clientId, dueDate, isPaid, creditDays, bypassToken } = body;
 
         if (!type || !amount || !description || !date) {
             return NextResponse.json(
@@ -83,6 +84,23 @@ export async function POST(request: NextRequest) {
                 { error: 'El usuario debe tener una empresa vinculada para registrar transacciones' },
                 { status: 400 }
             );
+        }
+
+        // ── Verificación de Cumplimiento (Bloqueante) ────────────────────────
+        const complianceResult = await checkTransactionCompliance(
+            companyId,
+            parseFloat(amount.toString()),
+            clientId,
+            description,
+            bypassToken
+        );
+
+        if (!complianceResult.allowed) {
+            return NextResponse.json({
+                error: 'Transacción bloqueada por cumplimiento AML',
+                compliance: complianceResult,
+                message: 'Las transacciones ≥$10,000 requieren KYC verificado o un token de bypass del administrador.'
+            }, { status: 403 });
         }
 
         // Validar u obtener categoría por defecto

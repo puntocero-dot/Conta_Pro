@@ -10,7 +10,8 @@
       "Bash(node -e \":*)",
       "Bash(mkdir -p \"C:\\\\Users\\\\DELL\\\\Desktop\\\\Proyectos\\\\Conta_2go\\\\src\\\\app\\\\api\\\\payroll\\\\[id]\\\\employees\")",
       "Bash(mkdir -p \"C:\\\\Users\\\\DELL\\\\Desktop\\\\Proyectos\\\\Conta_2go\\\\src\\\\app\\\\api\\\\payroll\\\\[id]\\\\approve\")",
-      "Bash(node scripts/apply-migration.mjs)"
+      "Bash(node scripts/apply-migration.mjs)",
+      "Bash(node scripts/seed-app-factory.mjs)"
     ]
   }
 }

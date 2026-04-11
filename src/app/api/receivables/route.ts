@@ -42,20 +42,35 @@ export async function GET(request: NextRequest) {
     };
 
     let totalPending = 0;
+    let totalImpairment = 0;
 
     for (const tx of transactions) {
       const bucket = agingBucket(tx.dueDate);
+      const isFlagged = (tx.metadata as any)?.impairmentFlag === true;
+      
+      // Cálculo de deterioro (NIIF Sección 11)
+      let impairmentAmount = 0;
+      if (isFlagged || bucket === 'over90') {
+        impairmentAmount = tx.amount;
+      } else if (bucket === 'days90') {
+        impairmentAmount = tx.amount * 0.50;
+      }
+
       buckets[bucket].push({
         id: tx.id,
         description: tx.description,
         amount: tx.amount,
+        impairmentAmount,
+        netValue: tx.amount - impairmentAmount,
         date: tx.date,
         dueDate: tx.dueDate,
         clientName: tx.client?.name ?? 'Sin cliente',
         categoryName: tx.category?.name ?? 'Sin categoría',
         creditDays: tx.creditDays,
+        isFlagged,
       });
       totalPending += tx.amount;
+      totalImpairment += impairmentAmount;
     }
 
     const totals = {
@@ -65,6 +80,8 @@ export async function GET(request: NextRequest) {
       days90: buckets.days90.reduce((s, t) => s + t.amount, 0),
       over90: buckets.over90.reduce((s, t) => s + t.amount, 0),
       total: totalPending,
+      totalImpairment,
+      netReceivables: totalPending - totalImpairment,
     };
 
     return NextResponse.json({ aging: buckets, totals });

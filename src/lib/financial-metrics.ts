@@ -1,4 +1,5 @@
 import { BalanceSheet, IncomeStatement, CashFlowStatement } from './financial-statements';
+import { TaxRuleService } from './tax-rules';
 
 export interface FinancialMetrics {
   // Rentabilidad
@@ -26,9 +27,9 @@ export interface FinancialMetrics {
   ivaDebitoEstimado: number;   // 13% sobre ingresos
   ivaCreditoEstimado: number;  // IVA en compras (aproximado)
   ivaBalance: number;          // Débito - Crédito
-  pagoACuenta: number;         // 1.75% ingresos brutos
+  pagoACuenta: number;         // 1.75% (dinámico)
   isrEstimado: number;
-  reservaLegal: number;        // 7% utilidad neta
+  reservaLegal: number;        // Dinámica por tipo de sociedad y tope
 
   // Revenue
   revenue: number;
@@ -36,11 +37,12 @@ export interface FinancialMetrics {
   grossProfit: number;
 }
 
-export function calcFinancialMetrics(
+export async function calcFinancialMetrics(
   bs: BalanceSheet,
   is: IncomeStatement,
-  _cf: CashFlowStatement
-): FinancialMetrics {
+  _cf: CashFlowStatement,
+  companyId: string
+): Promise<FinancialMetrics> {
   const currentAssets = bs.assets.current.total;
   const currentLiabilities = bs.liabilities.current.total;
   const totalAssets = bs.assets.total;
@@ -72,12 +74,14 @@ export function calcFinancialMetrics(
   const daysReceivable = dailyRevenue > 0 ? receivables / dailyRevenue : 0;
   const daysPayable = dailyCost > 0 ? payables / dailyCost : 0;
 
-  // Impuestos SV
-  const IVA_RATE = 0.13;
-  const ivaDebitoEstimado = is.revenue * IVA_RATE;
-  const ivaCreditoEstimado = is.costOfSales * IVA_RATE;
+  // Impuestos SV dinámicos
+  const ivaRate = await TaxRuleService.getRate('SV', 'IVA');
+  const pagoACuentaRate = await TaxRuleService.getRate('SV', 'PAGO_A_CUENTA');
+  
+  const ivaDebitoEstimado = is.revenue * ivaRate;
+  const ivaCreditoEstimado = is.costOfSales * ivaRate;
   const ivaBalance = ivaDebitoEstimado - ivaCreditoEstimado;
-  const pagoACuenta = is.revenue * 0.0175;
+  const pagoACuenta = is.revenue * pagoACuentaRate;
 
   return {
     ebitda: is.ebitda,

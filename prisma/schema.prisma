@@ -22,27 +22,32 @@ model User {
 }
 
 model Company {
-  id             String          @id @default(uuid())
-  name           String
-  taxId          String          @unique
-  country        String
-  metadata       Json?
-  groupId        String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  accounts       Account[]
-  categories     Category[]
-  journalEntries JournalEntry[]
-  transactions   Transaction[]
-  clients        AccountClient[]
-  auditLogs      AuditLog[]
-  users          User[]          @relation("CompanyToUser")
-  group          CompanyGroup?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  members        CompanyMember[]
-  payrolls       Payroll[]
-  loans          Loan[]
-  provisions     Provision[]
-  fixedAssets    FixedAsset[]
+  id                   String          @id @default(uuid())
+  name                 String
+  taxId                String          @unique
+  country              String
+  companyType          CompanyType?    // Tipo de sociedad mercantil
+  localCurrency        String          @default("USD")
+  presentationCurrency String          @default("USD")
+  metadata             Json?
+  groupId              String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  accounts             Account[]
+  categories           Category[]
+  journalEntries       JournalEntry[]
+  transactions         Transaction[]
+  clients              AccountClient[]
+  auditLogs            AuditLog[]
+  users                User[]          @relation("CompanyToUser")
+  group                CompanyGroup?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  members              CompanyMember[]
+  payrolls             Payroll[]
+  loans                Loan[]
+  provisions           Provision[]
+  fixedAssets          FixedAsset[]
+  legalBooks           LegalBook[]
+  complianceAlerts     ComplianceAlert[]
 
   @@index([groupId])
 }
@@ -74,20 +79,21 @@ model CompanyMember {
 }
 
 model AccountClient {
-  id        String   @id @default(uuid())
-  name      String
-  email     String?
-  phone     String?
-  nit       String?
-  dui       String?
-  address   String?
-  type      String   @default("INDIVIDUAL") // INDIVIDUAL o EMPRESA
-  companyId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  name        String
+  email       String?
+  phone       String?
+  nit         String?
+  dui         String?
+  address     String?
+  type        String   @default("INDIVIDUAL") // INDIVIDUAL o EMPRESA
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company      Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   transactions Transaction[]
-  role        CounterpartyType @default(CLIENT)
+  role         CounterpartyType @default(CLIENT)
+  kycRecords   KYCRecord[]
 
   @@index([companyId])
 }
@@ -234,6 +240,14 @@ enum TransactionStatus {
   CORRECTED
 }
 
+enum CompanyType {
+  SA              // Sociedad Anónima
+  SRL             // Sociedad de Responsabilidad Limitada
+  SNC             // Sociedad en Nombre Colectivo
+  COOPERATIVA
+  PERSONA_NATURAL
+}
+
 // ─── PLANILLAS ──────────────────────────────────────────────────────────────
 
 model Payroll {
@@ -282,6 +296,9 @@ model PayrollEmployee {
   afpPatronal     Float    // 8.75% del salario
   isssPatronal    Float    // 7.5% del salario (max base $1,000)
   insaforp        Float    // 1% del salario (max base $1,000)
+  // ── Licencias remuneradas ─────────────────────────────────
+  licenciaDias    Int?     // Días de licencia remunerada en el período
+  licenciaTipo    String?  // PATERNIDAD, OBLIGACION_PUBLICA, LUTO, etc.
   createdAt       DateTime @default(now())
   payroll         Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
 
@@ -353,40 +370,47 @@ model Provision {
 // ─── ACTIVOS FIJOS ────────────────────────────────────────────────────────────
 
 model FixedAsset {
-  id              String             @id @default(uuid())
-  companyId       String
-  name            String
-  accountCode     String             // 1202, 1203, 1204, 1205, 1206, 1207
-  purchaseDate    DateTime
-  purchaseCost    Float
-  residualValue   Float              @default(0)
-  usefulLifeYears Int                // vida útil fiscal SV
-  accumulatedDepr Float              @default(0)
-  bookValue       Float              // purchaseCost - accumulatedDepr
-  status          String             @default("ACTIVE") // ACTIVE, SOLD, SCRAPPED
-  notes           String?
-  metadata        Json?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  depreciations   AssetDepreciation[]
+  id                   String             @id @default(uuid())
+  companyId            String
+  name                 String
+  accountCode          String             // 1202, 1203, 1204, 1205, 1206, 1207
+  purchaseDate         DateTime
+  purchaseCost         Float
+  residualValue        Float              @default(0)
+  usefulLifeYears      Int                // vida útil fiscal SV (tabla Ley ISR)
+  accumulatedDepr      Float              @default(0)
+  bookValue            Float              // purchaseCost - accumulatedDepr (fiscal)
+  // ── Campos NIIF (Sección 17) ──────────────────────────────────
+  niifUsefulLifeYears  Int?               // vida útil estimada real (juicio profesional)
+  niifResidualValue    Float?             // valor residual NIIF
+  niifAccumulatedDepr  Float              @default(0)
+  niifBookValue        Float?             // valor en libros NIIF
+  // ──────────────────────────────────────────────────────────────
+  status               String             @default("ACTIVE") // ACTIVE, SOLD, SCRAPPED
+  notes                String?
+  metadata             Json?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  company              Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  depreciations        AssetDepreciation[]
 
   @@index([companyId])
 }
 
 model AssetDepreciation {
-  id              String     @id @default(uuid())
-  assetId         String
-  year            Int
-  month           Int
-  amount          Float
-  accumulatedDepr Float
-  journalEntryId  String?
-  createdAt       DateTime   @default(now())
-  asset           FixedAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id               String     @id @default(uuid())
+  assetId          String
+  year             Int
+  month            Int
+  amount           Float
+  accumulatedDepr  Float
+  depreciationType String     @default("FISCAL") // FISCAL | NIIF
+  journalEntryId   String?
+  createdAt        DateTime   @default(now())
+  asset            FixedAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([assetId])
-  @@unique([assetId, year, month])
+  @@unique([assetId, year, month, depreciationType])
 }
 
 // ─── ENUMS ───────────────────────────────────────────────────────────────────
@@ -409,4 +433,91 @@ enum ProvisionType {
   INDEMNIZACION  // Indemnización (15 días/año de servicio)
   BONO_SEMESTRAL // Bono semestral empresarial
   OTHER          // Otras previsiones
+}
+
+// ─── LIBROS LEGALES ──────────────────────────────────────────────────────────
+
+model LegalBook {
+  id          String   @id @default(uuid())
+  companyId   String
+  type        String   // ACTAS, ACCIONISTAS, CAPITAL_VARIABLE, DIARIO, MAYOR
+  title       String
+  content     Json     // Contenido del acta o registro
+  folioNumber Int?     // Número de folio (hojas legalizadas)
+  date        DateTime
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([type])
+}
+
+// ─── CUMPLIMIENTO ANTI-LAVADO (UIF) ──────────────────────────────────────────
+
+model ComplianceAlert {
+  id              String    @id @default(uuid())
+  companyId       String
+  transactionId   String?
+  alertType       String    // THRESHOLD_EXCEEDED, STRUCTURING_SUSPECTED, MANUAL
+  amount          Float
+  description     String
+  status          String    @default("PENDING") // PENDING, REVIEWED, REPORTED, DISMISSED
+  reviewedBy      String?   // userId del Oficial de Cumplimiento
+  reviewedAt      DateTime?
+  reportNumber    String?   // Número de ROS si fue reportado a UIF
+  metadata        Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([status])
+  @@index([alertType])
+}
+
+model KYCRecord {
+  id                 String        @id @default(uuid())
+  clientId           String
+  companyId          String
+  riskLevel          String        @default("LOW") // LOW, MEDIUM, HIGH, PEP
+  sourceOfFunds      String?
+  occupation         String?
+  annualIncome       Float?
+  politicallyExposed Boolean       @default(false)
+  kycFormData        Json?         // Formulario de Identificación del Cliente (UIF)
+  documents          Json?         // Lista de documentos adjuntos
+  verifiedAt         DateTime?
+  verifiedBy         String?
+  expiresAt          DateTime?
+  status             String        @default("PENDING") // PENDING, VERIFIED, EXPIRED, REJECTED
+  notes              String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  client             AccountClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([companyId])
+  @@index([riskLevel])
+  @@unique([clientId, companyId])
+}
+
+// ─── REGLAS FISCALES CONFIGURABLES ───────────────────────────────────────────
+
+model TaxRule {
+  id            String    @id @default(uuid())
+  countryCode   String    // "SV", "GT", "HN"
+  ruleType      String    // "IVA", "ISR", "PAGO_A_CUENTA", "AFP_LABORAL", etc.
+  name          String
+  rate          Float     // Tasa en decimal (0.13 para 13%)
+  threshold     Float?    // Umbral si aplica (ej. $150k para ISR 30%)
+  maxBase       Float?    // Base máxima (ej. $1000 ISSS)
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+
+  @@index([countryCode, ruleType])
+  @@unique([countryCode, ruleType, effectiveFrom])
 }

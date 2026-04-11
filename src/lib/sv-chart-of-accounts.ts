@@ -19,6 +19,7 @@ export const SV_CHART_OF_ACCOUNTS: ChartAccount[] = [
   { code: '1106', name: 'Pago a Cuenta por Recuperar',          type: 'ACTIVO', group: 'Activo Corriente' },
   { code: '1107', name: 'Anticipos a Proveedores',              type: 'ACTIVO', group: 'Activo Corriente' },
   { code: '1108', name: 'Otros Activos Corrientes',             type: 'ACTIVO', group: 'Activo Corriente' },
+  { code: '1109', name: 'ISR Diferido Activo (Dif. Temporaria)',type: 'ACTIVO', group: 'Activo Corriente' },
 
   // ─── ACTIVO NO CORRIENTE ─────────────────────────────────────────────────────
   { code: '1201', name: 'Terrenos',                             type: 'ACTIVO', group: 'Activo No Corriente' },
@@ -52,6 +53,7 @@ export const SV_CHART_OF_ACCOUNTS: ChartAccount[] = [
   { code: '2114', name: 'Bonos por Pagar',                      type: 'PASIVO', group: 'Pasivo Corriente' },
   { code: '2115', name: 'Cuotas de Préstamos CP',               type: 'PASIVO', group: 'Pasivo Corriente' },
   { code: '2116', name: 'Intereses por Pagar',                  type: 'PASIVO', group: 'Pasivo Corriente' },
+  { code: '2117', name: 'ISR Diferido por Pagar (Dif. Temporaria)', type: 'PASIVO', group: 'Pasivo Corriente' },
 
   // ─── PASIVO NO CORRIENTE ─────────────────────────────────────────────────────
   { code: '2201', name: 'Préstamos Bancarios LP',               type: 'PASIVO', group: 'Pasivo No Corriente' },

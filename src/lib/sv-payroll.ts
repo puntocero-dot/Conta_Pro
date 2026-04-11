@@ -22,12 +22,22 @@ export const SV = {
     INSAFORP_RATE: 0.01,        // 1% patronal
     INSAFORP_MAX_BASE: 1000,    // misma base que ISSS
 
+    // ── SALARIOS MÍNIMOS (Reforma 1 junio 2025 — incremento 12%) ──
+    SALARIO_MINIMO_COMERCIO: 408.80,   // Comercio, industria y servicios
+    SALARIO_MINIMO_MAQUILA: 402.32,    // Maquila textil y confección
+    SALARIO_MINIMO_AGRICOLA: 272.72,   // Agrícola (recolección caña/café)
+    SALARIO_MINIMO_MENSUAL: 408.80,    // Default = sector comercio
+
     // ── PROVISIONES ──────────────────────────────────────────
     VACATION_DAYS: 15,          // días de vacaciones por año
     VACATION_RECARGO: 0.30,     // 30% recargo sobre el salario de vacaciones
     // Aguinaldo por años de servicio:
     AGUINALDO_DAYS: (years: number) => years >= 10 ? 18 : years >= 3 ? 15 : 10,
     INDEMNIZACION_DAYS: 15,     // días de salario por año de servicio
+
+    // ── LICENCIAS REMUNERADAS ────────────────────────────────
+    LICENCIA_PATERNIDAD_DIAS: 3,       // Decreto Legislativo 332
+    LICENCIA_LUTO_DIAS: 3,             // Fallecimiento de familiar directo
 } as const;
 
 // ── ISR Retención en la fuente (mensual) ────────────────────────────────────
@@ -186,8 +196,12 @@ export function calcMonthlyProvisions(
     const aguinaldoDays = SV.AGUINALDO_DAYS(yearsOfService);
     const aguinaldo = round2((monthlySalary / 30) * aguinaldoDays / 12);
 
-    // Indemnización: 15 días de salario / 12 meses
-    const indemnizacion = round2((monthlySalary / 30) * SV.INDEMNIZACION_DAYS / 12);
+    // Indemnización: 15 días de salario por año de servicio
+    // TOPE LEGAL: máx 4 salarios mínimos diarios (Código de Trabajo Art. 58)
+    const salarioMinimoDiario = SV.SALARIO_MINIMO_MENSUAL / 30;
+    const topeDiarioIndemnizacion = salarioMinimoDiario * 4; // $54.51/día
+    const salarioBaseIndemnizacion = Math.min(dailySalary, topeDiarioIndemnizacion);
+    const indemnizacion = round2(salarioBaseIndemnizacion * SV.INDEMNIZACION_DAYS / 12);
 
     return { vacation, aguinaldo, indemnizacion };
 }

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { calcReservaLegal, type CompanyTypeKey } from '@/lib/sv-legal-config';
 
 export interface AccountBalance {
   code: string;
@@ -208,7 +209,22 @@ export async function buildIncomeStatement(
   const isrRate = revenue > 150000 ? 0.30 : 0.25;
   const isr = ebt > 0 ? ebt * isrRate : 0;
   const netIncome = ebt - isr;
-  const reservaLegal = netIncome > 0 ? netIncome * 0.07 : 0;
+
+  // Reserva Legal dinámica según tipo de sociedad
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { companyType: true, metadata: true },
+  });
+  const companyType = (company?.companyType as CompanyTypeKey) ?? 'SA';
+  const metadata = company?.metadata as Record<string, unknown> | null;
+  const capitalSocial = typeof metadata?.shareCapital === 'number' ? metadata.shareCapital : 0;
+
+  // Obtener reserva acumulada (saldo de cuenta 3102)
+  const reservaAccount = balances.find(a => a.code === '3102');
+  const reservaAcumulada = reservaAccount?.balance ?? 0;
+
+  const reservaResult = calcReservaLegal(netIncome, companyType, capitalSocial, reservaAcumulada);
+  const reservaLegal = reservaResult.amount;
   const distributableIncome = netIncome - reservaLegal;
 
   return {
