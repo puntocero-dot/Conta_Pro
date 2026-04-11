@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
 import { buildIncomeStatement } from '@/lib/financial-statements';
 import { TaxRuleService } from '@/lib/tax-rules';
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
         type: 'INGRESO',
         status: 'ACTIVE',
         date: { gte: startDate, lte: endDate },
-        metadata: { path: ['impairmentAmount'], not: null }
+        metadata: { path: ['impairmentAmount'], not: Prisma.DbNull }
       }
     });
     

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyTokenEdge } from '@/lib/auth/jwt-edge';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // 1. CSRF protection: peticiones mutantes a la API deben incluir X-Requested-With

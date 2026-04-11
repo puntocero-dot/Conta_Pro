@@ -11,6 +11,7 @@ import {
 import { prisma } from '@/lib/prisma';
 import { extractInvoiceData } from '@/lib/gemini';
 import { calcFinancialMetrics } from '@/lib/financial-metrics';
+import { buildBalanceSheet, buildIncomeStatement, buildCashFlow } from '@/lib/financial-statements';
 
 export async function POST(req: NextRequest) {
   try {
@@ -142,7 +143,15 @@ async function handleMessage(message: any) {
     }
 
     await sendMessage(chatId, '⏳ Calculando métricas en tiempo real...');
-    const metrics = await calcFinancialMetrics(companyId);
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), 0, 1);
+    const endDate = now;
+    const [bs, is, cf] = await Promise.all([
+      buildBalanceSheet(companyId, endDate),
+      buildIncomeStatement(companyId, startDate, endDate),
+      buildCashFlow(companyId, startDate, endDate),
+    ]);
+    const metrics = await calcFinancialMetrics(bs, is, cf, companyId);
     const summary = `
 📊 <b>Resumen Financiero</b>
 🏢 Empresa: ${user.companies.find(c => c.id === companyId)?.name || 'Principal'}
@@ -233,14 +242,26 @@ async function handleCallback(callback: any) {
 
     const companyId = (session.data as any).activeCompanyId || user.companies[0].id;
 
+    const defaultCategory = await prisma.category.findFirst({
+      where: { companyId, type: 'EGRESO', name: { contains: 'Gastos' } }
+    }) || await prisma.category.findFirst({
+      where: { companyId, type: 'EGRESO' }
+    });
+
+    if (!defaultCategory) {
+      await sendMessage(chatId, '❌ Error: Categoría no encontrada. Configura las categorías en el Dashboard.');
+      return;
+    }
+
     await prisma.transaction.create({
       data: {
         companyId,
+        userId: user.id,
         date: txData.date ? new Date(txData.date) : new Date(),
         amount: txData.total || 0,
         description: `[BOT] ${txData.provider}: ${txData.description}`,
         type: 'EGRESO',
-        category: 'GAST_ADMIN',
+        categoryId: defaultCategory.id,
         status: 'PENDING_APPROVAL',
         metadata: { source: 'telegram_bot', ai_extracted: true }
       }

@@ -38,7 +38,7 @@ export default function TransactionsPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
-    const [filter, setFilter] = useState<'ALL' | 'INGRESO' | 'EGRESO'>('ALL');
+    const [filter, setFilter] = useState<'ALL' | 'INGRESO' | 'EGRESO' | 'PENDING_APPROVAL'>('ALL');
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [annullingId, setAnnullingId] = useState<string | null>(null);
     const [togglingPaid, setTogglingPaid] = useState<string | null>(null);
@@ -200,7 +200,7 @@ export default function TransactionsPage() {
                                 { value: 'PENDING_APPROVAL', label: `Pendientes (${pendingApprovalCount})` },
                             ]}
                             value={filter}
-                            onChange={(v) => setFilter(v as any)}
+                            onChange={(v) => setFilter(v as typeof filter)}
                         />
                     </div>
 
