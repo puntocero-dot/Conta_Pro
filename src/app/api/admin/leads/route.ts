@@ -23,6 +23,35 @@ export async function POST(request: NextRequest) {
             data: leadData
         });
 
+        // Notificar a los Super Admins vía Telegram si están vinculados
+        try {
+            const superAdmins = await prisma.user.findMany({
+                where: { 
+                    role: 'SUPER_ADMIN',
+                    telegramId: { not: null }
+                },
+                select: { telegramId: true }
+            });
+
+            if (superAdmins.length > 0) {
+                const { sendMessage } = await import('@/lib/telegram');
+                const message = `🚀 *Nuevo Prospecto (Punto Cero)*\n\n` +
+                                `👤 *Nombre:* ${leadData.name}\n` +
+                                `📧 *Email:* ${leadData.email}\n` +
+                                `💎 *Plan:* ${leadData.plan}\n\n` +
+                                `_Gestiona este lead en el panel de administración._`;
+                
+                await Promise.all(
+                    superAdmins.map(admin => 
+                        sendMessage(admin.telegramId!, message)
+                    )
+                );
+            }
+        } catch (notifyError) {
+            console.error('Error notifying Super Admins via Telegram:', notifyError);
+            // No bloqueamos la respuesta al usuario si falla la notificación
+        }
+
         return NextResponse.json({ success: true, leadId: lead.id });
     } catch (error) {
         console.error('Error creating lead:', error);
