@@ -14,7 +14,7 @@ import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import {
     HomeIcon, SparklesIcon, BuildingIcon, UsersIcon,
     WalletIcon, BarChartIcon, ShieldIcon, ClipboardIcon, LogOutIcon,
-    FileTextIcon, DollarSignIcon, AlertTriangleIcon
+    FileTextIcon, DollarSignIcon, AlertTriangleIcon, ArrowLeftIcon
 } from '@/components/icons';
 import styles from './layout.module.css';
 
@@ -76,8 +76,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { path: '/compliance', icon: <ShieldIcon size={18} />, label: 'Anti-Lavado', roles: ['all'], group: 'compliance' },
         { path: '/compliance/telegram', icon: <SparklesIcon size={18} />, label: 'Bot de Telegram', roles: ['all'], group: 'compliance' },
         { path: '/security-dashboard', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN'], group: 'admin' },
+        { path: '/security/users', icon: <UsersIcon size={18} />, label: 'Gestión Usuarios', roles: ['SUPER_ADMIN'], group: 'admin' },
         { path: '/admin/prospectos', icon: <UsersIcon size={18} />, label: 'Prospectos', roles: ['SUPER_ADMIN'], group: 'admin' },
         { path: '/security/audit-logs', icon: <ClipboardIcon size={18} />, label: 'Auditoría', roles: ['AUDITOR'], group: 'admin' },
+        { path: '/security/alerts', icon: <AlertTriangleIcon size={18} />, label: 'Alertas', roles: ['SUPER_ADMIN'], group: 'admin' },
     ];
 
     const filteredMenu = menuItems.filter(item =>
@@ -201,18 +203,31 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             {/* Main Content */}
             <main className={styles.main}>
                 <header className={styles.topBar}>
-                    {/* Hamburger button (mobile only) */}
-                    <button
-                        className={styles.hamburger}
-                        onClick={() => setMobileOpen(true)}
-                        aria-label="Abrir menú"
-                    >
-                        <span />
-                        <span />
-                        <span />
-                    </button>
-                    <div className={styles.sectionTitle}>
-                        {getSectionTitle(pathname)}
+                    <div className={styles.topBarLeft}>
+                        {/* Hamburger button (mobile only) */}
+                        <button
+                            className={styles.hamburger}
+                            onClick={() => setMobileOpen(true)}
+                            aria-label="Abrir menú"
+                        >
+                            <span />
+                            <span />
+                            <span />
+                        </button>
+                        
+                        {pathname !== '/dashboard' && pathname !== '/security-dashboard' && (
+                            <button 
+                                onClick={() => router.back()}
+                                className={styles.backBtn}
+                                title="Regresar"
+                            >
+                                <ArrowLeftIcon size={18} />
+                            </button>
+                        )}
+
+                        <div className={styles.sectionTitle}>
+                            {getSectionTitle(pathname)}
+                        </div>
                     </div>
                     <div className={styles.topBarActions}>
                         <DateRangePicker />
