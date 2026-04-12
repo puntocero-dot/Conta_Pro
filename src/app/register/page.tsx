@@ -50,13 +50,14 @@ export default function RegisterPage() {
                 body: JSON.stringify({ password }),
             });
 
-            const hibpData = await hibpResponse.json();
-
-            if (!hibpData.isSecure) {
-                setSecurityWarnings(hibpData.warnings);
-                setError('La contraseña no es segura. Revisa las advertencias.');
-                setLoading(false);
-                return;
+            if (hibpResponse.ok) {
+                const hibpData = await hibpResponse.json();
+                if (hibpData && hibpData.isSecure === false) {
+                    setSecurityWarnings(hibpData.warnings || []);
+                    setError('La contraseña no es segura. Revisa las advertencias.');
+                    setLoading(false);
+                    return;
+                }
             }
         } catch (err) {
             console.error('Error validating password with HIBP:', err);

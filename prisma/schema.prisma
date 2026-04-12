@@ -533,3 +533,19 @@ model BotSession {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+model Lead {
+  id        String   @id @default(uuid())
+  email     String
+  name      String?
+  phone     String?
+  plan      String   // STARTER, PROFESSIONAL, ENTERPRISE
+  status    String   @default("NEW") // NEW, CONTACTED, CONVERTED, LOST
+  userId    String?  // Si el lead se creó desde un usuario registrado
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+}

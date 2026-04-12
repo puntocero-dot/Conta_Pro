@@ -9,6 +9,7 @@ import { ToastProvider } from '@/context/ToastContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { CompanySelector } from '@/components/ui/CompanySelector';
+import { useCompany } from '@/context/CompanyContext';
 import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import {
     HomeIcon, SparklesIcon, BuildingIcon, UsersIcon,
@@ -22,8 +23,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     const { theme } = useTheme();
     const router = useRouter();
     const pathname = usePathname();
+    const { companies, isLoading: companyLoading } = useCompany();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Redirección a onboarding si no hay empresas
+    useEffect(() => {
+        if (!companyLoading && companies.length === 0 && pathname !== '/onboarding' && user) {
+            router.push('/onboarding');
+        }
+    }, [companies, companyLoading, pathname, router, user]);
 
     // Cerrar sidebar mobile al cambiar de ruta
     useEffect(() => {

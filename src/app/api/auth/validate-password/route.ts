@@ -4,13 +4,7 @@ import { getAuthFromRequest } from '@/lib/auth/jwt';
 
 export async function POST(request: NextRequest) {
     try {
-        const auth = await getAuthFromRequest(request);
-        if (!auth) {
-            return NextResponse.json(
-                { error: 'No autorizado' },
-                { status: 401 }
-            );
-        }
+        // Se permite acceso público para validación durante el registro
 
         const { password } = await request.json();
 
