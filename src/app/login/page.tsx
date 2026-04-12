@@ -54,14 +54,11 @@ export default function LoginPage() {
             <div className={styles.loginCard}>
                 <div className={styles.header}>
                     <div className={styles.logo}>
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="48" height="48" rx="12" fill="var(--primary)" />
-                            <path d="M24 12L34 18V30L24 36L14 30V18L24 12Z" fill="white" fillOpacity="0.9" />
-                            <circle cx="24" cy="24" r="4" fill="var(--primary)" />
-                        </svg>
+                        <div className={styles.logoIcon}>◈</div>
                     </div>
-                    <h1>Conta<span className={styles.highlight}>2</span>Go</h1>
+                    <h1>Conta_pro</h1>
                     <p className={styles.subtitle}>Sistema Contable de Nivel Bancario</p>
+
                 </div>
 
                 <form onSubmit={handleLogin} className={styles.form}>

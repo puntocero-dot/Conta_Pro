@@ -14,18 +14,20 @@ import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import {
     HomeIcon, SparklesIcon, BuildingIcon, UsersIcon,
     WalletIcon, BarChartIcon, ShieldIcon, ClipboardIcon, LogOutIcon,
-    FileTextIcon, DollarSignIcon, AlertTriangleIcon, ArrowLeftIcon
+    FileTextIcon, DollarSignIcon, AlertTriangleIcon, ArrowLeftIcon,
+    SettingsIcon, XIcon, PencilIcon, CheckIcon
 } from '@/components/icons';
 import styles from './layout.module.css';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { user, role, logout } = useAuth();
-    const { theme } = useTheme();
+    const { theme, toggleTheme } = useTheme();
     const router = useRouter();
     const pathname = usePathname();
     const { companies, isLoading: companyLoading } = useCompany();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [showUserSettings, setShowUserSettings] = useState(false);
 
     // Redirección a onboarding si no hay empresas
     useEffect(() => {
@@ -56,14 +58,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { path: '/reports', icon: <BarChartIcon size={18} />, label: 'Reportes', roles: ['all'], group: 'main' },
         { path: '/invisible-ledger', icon: <SparklesIcon size={18} />, label: 'Libro Contable', roles: ['all'], group: 'main' },
         
-        { path: '/laboral-hub', icon: <UsersIcon size={18} />, label: 'Laboral', roles: ['all'], group: 'labor' },
-        { path: '/accounting-hub', icon: <BuildingIcon size={18} />, label: 'Contabilidad', roles: ['all'], group: 'accounting' },
-        { path: '/fiscal-hub', icon: <ClipboardIcon size={18} />, label: 'Fiscal', roles: ['all'], group: 'fiscal' },
-        { path: '/admin-hub', icon: <BuildingIcon size={18} />, label: 'Administración', roles: ['all'], group: 'admin' },
-        { path: '/compliance-hub', icon: <ShieldIcon size={18} />, label: 'Cumplimiento', roles: ['all'], group: 'compliance' },
-        { path: '/security-hub', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN', 'AUDITOR'], group: 'admin' },
-        
-        { path: '/categories', icon: <FileTextIcon size={18} />, label: 'Configuración', roles: ['all'], group: 'system' },
+        { path: '/laboral-hub', icon: <UsersIcon size={18} />, label: 'Laboral', roles: ['all'], group: 'modules' },
+        { path: '/accounting-hub', icon: <BuildingIcon size={18} />, label: 'Contabilidad', roles: ['all'], group: 'modules' },
+        { path: '/fiscal-hub', icon: <ClipboardIcon size={18} />, label: 'Fiscal', roles: ['all'], group: 'modules' },
+        { path: '/admin-hub', icon: <BuildingIcon size={18} />, label: 'Administración', roles: ['all'], group: 'modules' },
+        { path: '/compliance-hub', icon: <ShieldIcon size={18} />, label: 'Cumplimiento', roles: ['all'], group: 'modules' },
+        { path: '/security-hub', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN', 'AUDITOR'], group: 'modules' },
     ];
 
     const filteredMenu = menuItems.filter(item =>
@@ -99,7 +99,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         return item ? item.label : 'Conta Pro';
     };
 
-
     const handleNavClick = (path: string) => {
         router.push(path);
         setMobileOpen(false);
@@ -119,18 +118,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             <aside className={`${styles.sidebar} ${!sidebarOpen ? styles.collapsed : ''} ${mobileOpen ? styles.mobileOpen : ''}`}>
                 <div className={styles.sidebarHeader}>
                     <div className={styles.logo}>
-                        <div className={styles.logoIcon}>
-                            {theme.logoUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={theme.logoUrl} alt="Logo" style={{ width: 20, height: 20, objectFit: 'contain', borderRadius: 4 }} />
-                            ) : (
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                    <path d="M9 22V12h6v10" />
-                                </svg>
-                            )}
-                        </div>
-                        {sidebarOpen && <span>Conta Pro</span>}
+                        <div className={styles.logoIcon}>◈</div>
+                        {sidebarOpen && <span>Conta_pro</span>}
                     </div>
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -154,12 +143,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         <div key={group}>
                             {sidebarOpen && group !== 'main' && (
                                 <p className={styles.navGroupLabel}>
-                                    {group === 'labor' ? 'LABORAL'
-                                      : group === 'finance' ? 'FINANCIERO'
-                                      : group === 'accounting' ? 'CONTABILIDAD'
-                                      : group === 'fiscal' ? 'FISCAL'
-                                      : group === 'compliance' ? 'CUMPLIMIENTO'
-                                      : 'ADMINISTRACIÓN'}
+                                    {group === 'modules' ? 'MÓDULOS DEL NEGOCIO' : 'OTRO'}
                                 </p>
                             )}
                             {items.map(item => (
@@ -178,7 +162,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </nav>
 
                 <div className={styles.sidebarFooter}>
-                    <div className={styles.userCard}>
+                    <div 
+                        className={`${styles.userCard} ${showUserSettings ? styles.userCardActive : ''}`}
+                        onClick={() => setShowUserSettings(!showUserSettings)}
+                        style={{ cursor: 'pointer' }}
+                    >
                         <div className={styles.avatar} aria-hidden="true">
                             {user?.email?.charAt(0).toUpperCase() || 'U'}
                         </div>
@@ -188,13 +176,53 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                 <span className={styles.userRole}>{role?.replace('_', ' ')}</span>
                             </div>
                         )}
+                        {sidebarOpen && (
+                            <div className={styles.userActionIcon}>
+                                <SettingsIcon size={14} />
+                            </div>
+                        )}
                     </div>
-                    <button onClick={handleLogout} className={styles.logoutBtn} aria-label="Cerrar sesión">
-                        <LogOutIcon size={16} />
-                        {sidebarOpen && <span>Cerrar Sesión</span>}
-                    </button>
+
+                    {showUserSettings && (
+                        <div className={styles.userPopover}>
+                            <div className={styles.popoverHeader}>
+                                <span>Ajustes de Usuario</span>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowUserSettings(false);
+                                    }}
+                                >
+                                    <XIcon size={14} />
+                                </button>
+                            </div>
+                            <div className={styles.popoverContent}>
+                                <button className={styles.popoverItem} onClick={() => {
+                                    router.push('/categories');
+                                    setShowUserSettings(false);
+                                }}>
+                                    <SettingsIcon size={16} />
+                                    <span>Configuración General</span>
+                                </button>
+                                <button className={styles.popoverItem}>
+                                    <PencilIcon size={16} />
+                                    <span>Cambiar Contraseña</span>
+                                </button>
+                                <button className={styles.popoverItem} onClick={() => {
+                                    toggleTheme();
+                                }}>
+                                    {theme.mode === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Oscuro'}
+                                </button>
+                            </div>
+                            <button onClick={handleLogout} className={styles.popoverLogout}>
+                                <LogOutIcon size={16} />
+                                <span>Cerrar Sesión</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </aside>
+
 
             {/* Main Content */}
             <main className={styles.main}>
