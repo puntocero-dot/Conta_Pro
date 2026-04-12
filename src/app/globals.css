@@ -55,13 +55,41 @@
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
 
-  /* Transitions */
-  --transition-fast: 0.12s ease;
-  --transition: 0.18s ease;
-  --transition-slow: 0.3s ease;
+    /* Transitions */
+    --transition-fast: 0.12s ease;
+    --transition: 0.18s ease;
+    --transition-slow: 0.3s ease;
+}
+
+[data-theme='dark'] {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --muted: #94a3b8;
+  --muted-foreground: #64748b;
+  
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --card-border: rgba(255, 255, 255, 0.1);
+  
+  --border: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  --input: #1e293b;
+  
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  
+  /* Sidebar needs to stay dark or get even darker */
+  --sidebar-bg: #020617;
+  --sidebar-fg: #f8fafc;
+
+  /* Neutrals for forms */
+  --label-color: #94a3b8;
 }
 
 * {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
   box-sizing: border-box;
   padding: 0;
   margin: 0;
