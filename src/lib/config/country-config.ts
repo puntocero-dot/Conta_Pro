@@ -1,6 +1,6 @@
 /**
  * Configuración por país - Multi-Country Support
- * Conta2Go - Sistema Contable para Centroamérica
+ * Conta_pro - Sistema Contable para Centroamérica
  */
 
 import { encrypt, decrypt } from '../encryption/crypto';

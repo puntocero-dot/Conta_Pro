@@ -61,7 +61,8 @@ export default function OnboardingPage() {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h1>Bienvenido a <span className={styles.brand}>Conta2Go</span></h1>
+                <h1>Bienvenido a <span className={styles.brand}>Conta_pro</span></h1>
+
                 <p>Estás a un paso de revolucionar la gestión de tu negocio. Elige el plan que mejor se adapte a ti.</p>
             </div>
 

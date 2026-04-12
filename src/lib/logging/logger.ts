@@ -81,7 +81,7 @@ function maskSensitiveFields(obj: unknown): unknown {
 class Logger {
     private serviceName: string;
 
-    constructor(serviceName: string = 'conta2go') {
+    constructor(serviceName: string = 'conta_pro') {
         this.serviceName = serviceName;
     }
 

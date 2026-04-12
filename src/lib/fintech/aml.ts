@@ -67,7 +67,7 @@ export class AMLService {
                     resourceId: transactionData.id,
                     result: 'WARNING',
                     ipAddress: 'SYSTEM',
-                    userAgent: 'Conta2go-AML-Engine',
+                    userAgent: 'Conta_pro-AML-Engine',
                     metadata: {
                         score: result.score,
                         reasons: result.reasons,

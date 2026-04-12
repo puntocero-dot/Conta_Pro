@@ -17,7 +17,7 @@ export async function isPasswordCompromised(password: string): Promise<boolean> 
         // Consultar la API de HIBP
         const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
             headers: {
-                'User-Agent': 'Conta2Go-Security-Check',
+                'User-Agent': 'Conta_pro-Security-Check',
             },
         });
 
