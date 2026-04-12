@@ -207,15 +207,16 @@ async function handleReceiptPhoto(chatId: number, telegramId: string, photo: any
       temp_provider_name: extracted.provider
     });
 
-    let msg = `He detectado lo siguiente:\n\n`;
-    msg += `📅 Fecha: ${extracted.date || 'No detectada'}\n`;
-    msg += `💰 Monto: ${extracted.total || 'No detectado'}\n`;
-    msg += `🏢 Proveedor: ${extracted.provider || 'No detectado'}\n`;
-    msg += `📝 Descr: ${extracted.description || 'No detectada'}\n\n`;
-    msg += `¿Es correcto el nombre del proveedor? Escribe el nombre para buscar/crear o confirma.`;
+    let msg = `✅ <b>Datos extraídos con éxito:</b>\n\n`;
+    msg += `📅 Fecha: <b>${extracted.date || 'No detectada'}</b>\n`;
+    msg += `💰 Monto: <b>$${extracted.total || 'No detectado'}</b>\n`;
+    msg += `🏢 Proveedor: <b>${extracted.provider || 'No detectado'}</b>\n`;
+    msg += `📝 Descripción: <i>${extracted.description || 'No detectada'}</i>\n\n`;
+    msg += `¿El nombre del <b>proveedor</b> es correcto? Confirma seleccionando abajo o escribe el nombre correcto para buscarlo/crearlo:`;
     
     await tg.sendMessage(chatId, msg);
     await handleProviderSearch(chatId, telegramId, extracted.provider || '');
+
   } else {
     await tg.sendMessage(chatId, 'No pude extraer los datos. Por favor ingresa la fecha (DD-MM-YYYY):');
     await tg.updateSession(telegramId, 'ENTER_DATE');

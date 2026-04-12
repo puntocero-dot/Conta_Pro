@@ -18,16 +18,23 @@ export async function extractInvoiceData(imageUrl: string) {
     const base64 = Buffer.from(buffer).toString("base64");
 
     const prompt = `
-      Analiza esta imagen de factura o ticket y extrae la siguiente información en formato JSON puro:
+      Eres un experto en contabilidad de El Salvador. 
+      Analiza esta imagen de factura, ticket o DTE (Documento Tributario Electrónico).
+      Extrae la siguiente información en formato JSON puro:
       {
         "date": "YYYY-MM-DD",
         "total": number,
-        "provider": "nombre del establecimiento",
-        "description": "breve resumen"
+        "provider": "nombre comercial del establecimiento",
+        "description": "resumen de lo comprado"
       }
-      Si no puedes encontrar un campo, deja el valor como null.
-      Asegúrate de que la fecha esté en formato YYYY-MM-DD.
-      Responde SOLO con el JSON.
+
+      Instrucciones específicas:
+      - Para la fecha: Si es un DTE, busca "Fecha de emisión". Si no, busca la fecha más relevante. Formato YYYY-MM-DD.
+      - Para el total: Busca "Total a pagar", "Monto Total de la Operación", "Total" o "Suma". Usa solo números (ej: 936.43).
+      - Para el proveedor: Busca el nombre más prominente (ej: Unicomer, La Curacao, Super Selectos).
+      - Si no encuentras un campo, devuelve null.
+      
+      Responde SOLO con el objeto JSON, sin texto adicional ni bloques de código markdown.
     `;
 
     const result = await model.generateContent([
@@ -41,11 +48,28 @@ export async function extractInvoiceData(imageUrl: string) {
     ]);
 
     const text = result.response.text();
-    // Clean up potential markdown code blocks
-    const cleanJson = text.replace(/```json|```/g, "").trim();
-    return JSON.parse(cleanJson);
+    console.log("Raw Gemini Response:", text);
+
+    // Clean up response: remove Markdown blocks and whitespace
+    let cleanJson = text.trim();
+    if (cleanJson.includes("```")) {
+      cleanJson = cleanJson.split(/```(?:json)?/)[1]?.split("```")[0]?.trim() || cleanJson;
+    }
+
+    try {
+      return JSON.parse(cleanJson);
+    } catch (parseError) {
+      console.error("JSON Parse Error. Raw text:", text);
+      // Fallback: try to find anything that looks like JSON
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      throw parseError;
+    }
   } catch (error) {
     console.error("Error extracting invoice data with Gemini:", error);
     return null;
   }
+
 }
