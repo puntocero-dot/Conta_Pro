@@ -9,7 +9,17 @@ export async function GET(request: NextRequest) {
     if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
     const companyId = await getCompanyIdFromRequest(request, auth.userId);
-    if (!companyId) return NextResponse.json({ error: 'Sin empresa' }, { status: 400 });
+    if (!companyId) {
+      return NextResponse.json({ 
+        metrics: {
+          currentRatio: 0, debtToEquity: 0, returnOnAssets: 0, returnOnEquity: 0,
+          grossMargin: 0, netMargin: 0, revenue: 0, netIncome: 0
+        }, 
+        period: { startDate: new Date().toISOString(), endDate: new Date().toISOString() },
+        warning: 'No se identificó una empresa activa'
+      });
+    }
+
 
     const { searchParams } = new URL(request.url);
     const now = new Date();

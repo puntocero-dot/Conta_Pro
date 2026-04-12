@@ -6,7 +6,12 @@ import { ThreeBackground } from '@/components/ui/ThreeBackground';
 import styles from './landing.module.css';
 
 export default function LandingPage() {
+    React.useEffect(() => {
+        console.log("🚀 Conta2Go Landing Active - Modern Identity System");
+    }, []);
+
     return (
+
         <div className={styles.container}>
             <ThreeBackground />
             
