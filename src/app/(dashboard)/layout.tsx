@@ -55,31 +55,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         { path: '/transactions', icon: <WalletIcon size={18} />, label: 'Transacciones', roles: ['all'], group: 'main' },
         { path: '/reports', icon: <BarChartIcon size={18} />, label: 'Reportes', roles: ['all'], group: 'main' },
         { path: '/invisible-ledger', icon: <SparklesIcon size={18} />, label: 'Libro Contable', roles: ['all'], group: 'main' },
-        { path: '/categories', icon: <FileTextIcon size={18} />, label: 'Categorías', roles: ['all'], group: 'main' },
-        // ── Módulos laborales
-        { path: '/payroll', icon: <UsersIcon size={18} />, label: 'Planillas', roles: ['all'], group: 'labor' },
-        { path: '/provisions', icon: <AlertTriangleIcon size={18} />, label: 'Previsiones', roles: ['all'], group: 'labor' },
-        // ── Financiero
-        { path: '/loans', icon: <DollarSignIcon size={18} />, label: 'Préstamos', roles: ['all'], group: 'finance' },
-        // ── Contabilidad
-        { path: '/fixed-assets', icon: <BuildingIcon size={18} />, label: 'Activos Fijos', roles: ['all'], group: 'accounting' },
-        { path: '/receivables', icon: <WalletIcon size={18} />, label: 'CxC / CxP', roles: ['all'], group: 'accounting' },
-        { path: '/financial-statements', icon: <FileTextIcon size={18} />, label: 'Estados Financieros', roles: ['all'], group: 'accounting' },
-        { path: '/financial-metrics', icon: <BarChartIcon size={18} />, label: 'Métricas EBITDA', roles: ['all'], group: 'accounting' },
-        // ── Fiscal
-        { path: '/tax-reports', icon: <ClipboardIcon size={18} />, label: 'Reportes Fiscales', roles: ['all'], group: 'fiscal' },
-        // ── Administración
-        { path: '/companies', icon: <BuildingIcon size={18} />, label: 'Empresas', roles: ['all'], group: 'admin' },
-        { path: '/clients', icon: <FileTextIcon size={18} />, label: 'Clientes', roles: ['all'], group: 'admin' },
-        // ── Cumplimiento
-        { path: '/legal-books', icon: <ClipboardIcon size={18} />, label: 'Libros Legales', roles: ['all'], group: 'compliance' },
-        { path: '/compliance', icon: <ShieldIcon size={18} />, label: 'Anti-Lavado', roles: ['all'], group: 'compliance' },
-        { path: '/compliance/telegram', icon: <SparklesIcon size={18} />, label: 'Bot de Telegram', roles: ['all'], group: 'compliance' },
-        { path: '/security-dashboard', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN'], group: 'admin' },
-        { path: '/security/users', icon: <UsersIcon size={18} />, label: 'Gestión Usuarios', roles: ['SUPER_ADMIN'], group: 'admin' },
-        { path: '/admin/prospectos', icon: <UsersIcon size={18} />, label: 'Prospectos', roles: ['SUPER_ADMIN'], group: 'admin' },
-        { path: '/security/audit-logs', icon: <ClipboardIcon size={18} />, label: 'Auditoría', roles: ['AUDITOR'], group: 'admin' },
-        { path: '/security/alerts', icon: <AlertTriangleIcon size={18} />, label: 'Alertas', roles: ['SUPER_ADMIN'], group: 'admin' },
+        
+        { path: '/laboral-hub', icon: <UsersIcon size={18} />, label: 'Laboral', roles: ['all'], group: 'labor' },
+        { path: '/accounting-hub', icon: <BuildingIcon size={18} />, label: 'Contabilidad', roles: ['all'], group: 'accounting' },
+        { path: '/fiscal-hub', icon: <ClipboardIcon size={18} />, label: 'Fiscal', roles: ['all'], group: 'fiscal' },
+        { path: '/admin-hub', icon: <BuildingIcon size={18} />, label: 'Administración', roles: ['all'], group: 'admin' },
+        { path: '/compliance-hub', icon: <ShieldIcon size={18} />, label: 'Cumplimiento', roles: ['all'], group: 'compliance' },
+        { path: '/security-hub', icon: <ShieldIcon size={18} />, label: 'Seguridad', roles: ['SUPER_ADMIN', 'AUDITOR'], group: 'admin' },
+        
+        { path: '/categories', icon: <FileTextIcon size={18} />, label: 'Configuración', roles: ['all'], group: 'system' },
     ];
 
     const filteredMenu = menuItems.filter(item =>
@@ -91,18 +75,30 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             '/security/audit-logs': 'Registro de Auditoría',
             '/security/users': 'Gestión de Usuarios',
             '/security/alerts': 'Alertas de Seguridad',
-            '/payroll': 'Planillas',
-            '/loans': 'Préstamos',
+            '/payroll': 'Gestión de Planillas',
+            '/loans': 'Control de Préstamos',
             '/provisions': 'Previsiones Laborales',
             '/compliance': 'Cumplimiento Anti-Lavado',
-            '/compliance/telegram': 'Integración bookkeeping_bot',
-            '/legal-books': 'Libros Legales y Actas',
-            '/admin/prospectos': 'Gestión de Leads (Punto Cero)',
+            '/compliance/telegram': 'Configuración bookkeeping_bot',
+            '/legal-books': 'Custodia de Libros Legales',
+            '/admin/prospectos': 'Gestión de Leads',
+            '/laboral-hub': 'Centro de Mando Laboral',
+            '/accounting-hub': 'Contabilidad Avanzada',
+            '/fiscal-hub': 'Portal Fiscal',
+            '/admin-hub': 'Administración General',
+            '/compliance-hub': 'Centro de Cumplimiento',
+            '/security-hub': 'Seguridad y Auditoría',
+            '/categories': 'Categorías y Conceptos',
+            '/dashboard': 'Panel Principal',
+            '/invisible-ledger': 'Libro Contable Inteligente',
+            '/transactions': 'Registro de Movimientos',
+            '/reports': 'Reportes y Análisis'
         };
         if (securityTitles[path]) return securityTitles[path];
         const item = menuItems.find(i => i.path === path || path.startsWith(i.path + '/'));
         return item ? item.label : 'Conta Pro';
     };
+
 
     const handleNavClick = (path: string) => {
         router.push(path);
