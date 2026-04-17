@@ -232,6 +232,16 @@ function ViewRow({ cat, onEdit }: { cat: Category; onEdit: () => void }) {
       </div>
       <div className={styles.catInfo}>
         <strong>{cat.name}</strong>
+        {cat.name === 'Intereses Bancarios' && (
+          <div style={{ fontSize: '0.75rem', color: '#0369a1', background: '#e0f2fe', borderRadius: '6px', padding: '0.3rem 0.6rem', marginTop: '0.25rem', lineHeight: 1.4 }}>
+            ℹ Solo registra el interés devengado del período. El abono a capital reduce el préstamo en el módulo de Préstamos — no es gasto.
+          </div>
+        )}
+        {cat.name === 'Comisiones Bancarias' && (
+          <div style={{ fontSize: '0.75rem', color: '#7c3aed', background: '#f3e8ff', borderRadius: '6px', padding: '0.3rem 0.6rem', marginTop: '0.25rem', lineHeight: 1.4 }}>
+            ℹ Comisiones por mantenimiento de cuenta, transferencias y otros cargos del banco. No confundir con intereses.
+          </div>
+        )}
         {hasMapping ? (
           <div className={styles.mapping}>
             <span className={styles.debitTag}>DB {cat.debitAccountCode}</span>

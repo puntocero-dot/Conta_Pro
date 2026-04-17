@@ -3,34 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './onboarding.module.css';
-
-const PLANS = [
-    {
-        id: 'STARTER',
-        name: 'Emprendedor',
-        price: '$29',
-        description: 'Ideal para personas naturales y pequeños negocios.',
-        features: ['1 Empresa', 'Registro de Ingresos/Egresos', 'Reportes Básicos', 'Soporte vía Ticket'],
-        color: '#64748b'
-    },
-    {
-        id: 'PROFESSIONAL',
-        name: 'Profesional',
-        price: '$59',
-        description: 'Perfecto para PyMEs y Sociedades en crecimiento.',
-        features: ['Hasta 3 Empresas', 'Planillas de Sueldos', 'Métricas Financieras', 'Soporte Premium'],
-        color: '#3b82f6',
-        popular: true
-    },
-    {
-        id: 'ENTERPRISE',
-        name: 'Corporativo',
-        price: '$99',
-        description: 'Para grupos empresariales y holdings.',
-        features: ['Empresas Ilimitadas', 'Libros Legales Digitales', 'Oficial de Cumplimiento', 'API Access'],
-        color: '#fbbf24'
-    }
-];
+import { PLANS } from '@/lib/plans';
 
 export default function OnboardingPage() {
     const router = useRouter();

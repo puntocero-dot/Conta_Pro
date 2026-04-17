@@ -95,6 +95,15 @@ export default function SecurityDashboard() {
 
     return (
         <div className="animate-fade-in">
+            <div style={{ marginBottom: '1rem' }}>
+                <button
+                    className="btn btn-ghost"
+                    onClick={() => router.push('/dashboard')}
+                    style={{ fontSize: '0.875rem', color: '#64748b', paddingLeft: 0 }}
+                >
+                    ← Volver al Dashboard
+                </button>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2.5rem' }}>
                 <div>
                     <h1 style={{ marginBottom: '0.25rem' }}>Security Dashboard</h1>

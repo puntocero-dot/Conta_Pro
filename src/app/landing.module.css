@@ -184,6 +184,27 @@
     margin-bottom: 1rem;
 }
 
+/* Section headers */
+.sectionHeader {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.sectionTitle {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.75rem;
+}
+
+.sectionSubtitle {
+    color: #64748b;
+    font-size: 1.0625rem;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
 /* Features */
 .features {
     padding: 5rem 5%;
@@ -226,6 +247,182 @@
     line-height: 1.6;
 }
 
+/* Pricing */
+.pricing {
+    padding: 5rem 5%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.planGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+.planCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 2.5rem;
+    position: relative;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.planCard:hover {
+    transform: translateY(-4px);
+    border-color: var(--plan-color, rgba(255,255,255,0.15));
+}
+
+.planPopular {
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.04);
+    transform: scale(1.03);
+}
+
+.planPopular:hover {
+    transform: scale(1.03) translateY(-4px);
+}
+
+.popularBadge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3b82f6;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 1rem;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+
+.planName {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.planPrice {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--plan-color, white);
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+.planPriceNote {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #64748b;
+}
+
+.planDesc {
+    color: #64748b;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 1.5rem;
+}
+
+.planFeatures {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.planFeatures li {
+    color: #cbd5e1;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkmark {
+    color: var(--plan-color, #3b82f6);
+    font-weight: 700;
+}
+
+.planCta {
+    display: block;
+    text-align: center;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    background: rgba(255,255,255,0.06);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.12);
+    transition: background 0.3s ease;
+}
+
+.planCta:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.planCtaPrimary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+}
+
+.planCtaPrimary:hover {
+    background: #2563eb;
+}
+
+/* Security Section */
+.securitySection {
+    padding: 5rem 5%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.securityGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+
+.securityCard {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2rem;
+    border-radius: 20px;
+    text-align: center;
+    transition: border-color 0.3s ease;
+}
+
+.securityCard:hover {
+    border-color: rgba(251, 191, 36, 0.2);
+}
+
+.securityIcon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.securityCard h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.securityCard p {
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
 /* Footer */
 .footer {
     padding: 4rem 5%;
@@ -247,6 +444,19 @@
     opacity: 0.2;
 }
 
+/* Missing dot colors */
+.red { background: #ef4444; }
+.yellow { background: #f59e0b; }
+.green { background: #22c55e; }
+.logoIcon { font-size: 1.75rem; color: #fbbf24; }
+
+.secondaryBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
 @media (max-width: 968px) {
     .navLinks { display: none; }
     .hero {
@@ -257,5 +467,13 @@
     .heroContent { margin: 0 auto; }
     .ctaGroup { justify-content: center; }
     .featureGrid { grid-template-columns: 1fr; }
+    .planGrid { grid-template-columns: 1fr; }
+    .planPopular { transform: none; }
+    .planPopular:hover { transform: translateY(-4px); }
+    .securityGrid { grid-template-columns: repeat(2, 1fr); }
     .footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+}
+
+@media (max-width: 560px) {
+    .securityGrid { grid-template-columns: 1fr; }
 }

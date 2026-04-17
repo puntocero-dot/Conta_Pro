@@ -55,6 +55,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     const menuItems = [
         { path: '/dashboard', icon: <HomeIcon size={18} />, label: 'Dashboard', roles: ['all'], group: 'main' },
         { path: '/transactions', icon: <WalletIcon size={18} />, label: 'Transacciones', roles: ['all'], group: 'main' },
+        { path: '/recurring', icon: <DollarSignIcon size={18} />, label: 'Recurrentes', roles: ['all'], group: 'main' },
         { path: '/reports', icon: <BarChartIcon size={18} />, label: 'Reportes', roles: ['all'], group: 'main' },
         { path: '/invisible-ledger', icon: <SparklesIcon size={18} />, label: 'Libro Contable', roles: ['all'], group: 'main' },
         

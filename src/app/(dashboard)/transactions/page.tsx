@@ -43,14 +43,34 @@ export default function TransactionsPage() {
     const [annullingId, setAnnullingId] = useState<string | null>(null);
     const [togglingPaid, setTogglingPaid] = useState<string | null>(null);
 
+    const [bulkResult, setBulkResult] = useState<{ successCount: number; failedCount: number; failed: { row: number; reason: string; data: any }[] } | null>(null);
+    const [showBulkDocs, setShowBulkDocs] = useState(false);
+
+    const downloadCsvTemplate = () => {
+        const header = 'tipo,monto,descripcion,fecha,categoria_id,proveedor';
+        const example = 'EGRESO,150.00,Compra de papelería,2026-04-01,,Librería Española';
+        const blob = new Blob([header + '\n' + example], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'plantilla_transacciones.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !activeCompanyId) return;
+        e.target.value = '';
 
         const { parseCSV, MAPPINGS } = await import('@/lib/csv-helper');
         try {
-            const data = await parseCSV<any>(file, MAPPINGS.TRANSACTION);
-            if (data.length === 0) return;
+            const mapping = { ...MAPPINGS.TRANSACTION, proveedor: 'proveedor' };
+            const data = await parseCSV<any>(file, mapping);
+            if (data.length === 0) {
+                showToast('El archivo está vacío o no tiene el formato correcto', 'error');
+                return;
+            }
 
             const res = await fetch('/api/transactions/bulk', {
                 method: 'POST',
@@ -64,12 +84,12 @@ export default function TransactionsPage() {
 
             if (res.ok) {
                 const result = await res.json();
-                showToast(`Se cargaron ${result.count} transacciones correctamente`, 'success');
-                fetchTransactions();
+                setBulkResult(result);
+                if (result.successCount > 0) fetchTransactions();
             } else {
                 showToast('Error en la carga masiva', 'error');
             }
-        } catch (error) {
+        } catch {
             showToast('Error al procesar el archivo CSV', 'error');
         }
     };
@@ -160,7 +180,13 @@ export default function TransactionsPage() {
                 title="Transacciones"
                 subtitle={transactions.length > 0 ? `${transactions.length} operaciones en el período` : 'Historial financiero y control de caja'}
             >
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={() => setShowBulkDocs(v => !v)} title="Ver formato de columnas">
+                        ℹ️ Formato CSV
+                    </button>
+                    <button className="btn btn-secondary" style={{ fontSize: '0.8125rem' }} onClick={downloadCsvTemplate}>
+                        ⬇ Plantilla
+                    </button>
                     <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
                         📁 Carga Masiva
                         <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkImport} />
@@ -303,6 +329,51 @@ export default function TransactionsPage() {
                 </>
             )}
 
+            {/* CSV Format Docs Panel */}
+            {showBulkDocs && (
+                <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem 1.5rem', background: '#f8fafc', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.9375rem' }}>📋 Formato del archivo CSV</h4>
+                        <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={() => setShowBulkDocs(false)}>✕</button>
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                        <thead>
+                            <tr style={{ background: '#e2e8f0' }}>
+                                {['Columna', 'Nombre en CSV', 'Requerido', 'Valores aceptados', 'Ejemplo'].map(h => (
+                                    <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontWeight: 600, color: '#475569' }}>{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {[
+                                { col: 'Tipo', csv: 'tipo', req: 'Sí', vals: 'INGRESO o EGRESO', ex: 'EGRESO' },
+                                { col: 'Monto', csv: 'monto', req: 'Sí', vals: 'Número positivo', ex: '150.00' },
+                                { col: 'Descripción', csv: 'descripcion', req: 'Sí', vals: 'Texto libre', ex: 'Compra papelería' },
+                                { col: 'Fecha', csv: 'fecha', req: 'Sí', vals: 'YYYY-MM-DD', ex: '2026-04-01' },
+                                { col: 'Categoría', csv: 'categoria_id', req: 'No', vals: 'ID o nombre de categoría', ex: 'Gastos Generales' },
+                                { col: 'Proveedor', csv: 'proveedor', req: 'No', vals: 'Nombre del proveedor', ex: 'Librería Española' },
+                            ].map(r => (
+                                <tr key={r.csv} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '0.5rem 0.75rem', fontWeight: 600, color: '#1e293b' }}>{r.col}</td>
+                                    <td style={{ padding: '0.5rem 0.75rem' }}><code style={{ background: '#e2e8f0', padding: '0.1rem 0.35rem', borderRadius: '4px', fontSize: '0.75rem' }}>{r.csv}</code></td>
+                                    <td style={{ padding: '0.5rem 0.75rem', color: r.req === 'Sí' ? '#dc2626' : '#64748b' }}>{r.req}</td>
+                                    <td style={{ padding: '0.5rem 0.75rem', color: '#475569' }}>{r.vals}</td>
+                                    <td style={{ padding: '0.5rem 0.75rem', color: '#64748b', fontStyle: 'italic' }}>{r.ex}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Bulk Import Result Modal */}
+            {bulkResult && (
+                <BulkResultModal
+                    result={bulkResult}
+                    onClose={() => setBulkResult(null)}
+                />
+            )}
+
             {/* New / Edit Transaction Modal */}
             {(showNewModal || editingTransaction) && activeCompanyId && (
                 <TransactionModal
@@ -350,13 +421,15 @@ function TransactionModal({
     onSuccess: (msg: string) => void;
     onError: (msg: string) => void;
 }) {
+    const today = new Date();
+    const initDate = initialData?.date ? new Date(initialData.date) : today;
     const [formData, setFormData] = useState({
         type: initialData?.type || ('INGRESO' as 'INGRESO' | 'EGRESO'),
         amount: initialData?.amount.toString() || '',
         description: initialData?.description || '',
         date: initialData?.date
             ? new Date(initialData.date).toISOString().split('T')[0]
-            : new Date().toISOString().split('T')[0],
+            : today.toISOString().split('T')[0],
         categoryId: (initialData as any)?.categoryId || '',
         clientId: initialData?.clientId || '',
         dueDate: (initialData as any)?.dueDate
@@ -364,6 +437,8 @@ function TransactionModal({
             : '',
         isPaid: (initialData as any)?.isPaid !== false,
         creditDays: (initialData as any)?.creditDays?.toString() || '',
+        accountingMonth: ((initialData as any)?.metadata?.accountingMonth ?? initDate.getMonth() + 1).toString(),
+        accountingYear: ((initialData as any)?.metadata?.accountingYear ?? initDate.getFullYear()).toString(),
     });
     const [categories, setCategories] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
@@ -410,7 +485,14 @@ function TransactionModal({
                     'x-company-id': companyId,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ ...formData, amount }),
+                body: JSON.stringify({
+                    ...formData,
+                    amount,
+                    metadata: {
+                        accountingMonth: parseInt(formData.accountingMonth),
+                        accountingYear: parseInt(formData.accountingYear),
+                    },
+                }),
             });
             if (res.ok) {
                 onSuccess(initialData ? 'Transacción corregida correctamente' : 'Transacción registrada correctamente');
@@ -466,9 +548,33 @@ function TransactionModal({
                     <label className="label">Descripción</label>
                     <input type="text" className="input" required value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Ej: Cobro factura #123" />
                 </div>
-                <div className="form-group">
-                    <label className="label">Fecha</label>
-                    <input type="date" className="input" required value={formData.date} onChange={e => setFormData(p => ({ ...p, date: e.target.value }))} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div className="form-group">
+                        <label className="label">Fecha de Factura</label>
+                        <input type="date" className="input" required value={formData.date} onChange={e => {
+                            const d = new Date(e.target.value);
+                            setFormData(p => ({
+                                ...p,
+                                date: e.target.value,
+                                accountingMonth: (!isNaN(d.getTime()) ? d.getMonth() + 1 : p.accountingMonth).toString(),
+                                accountingYear: (!isNaN(d.getTime()) ? d.getFullYear() : p.accountingYear).toString(),
+                            }));
+                        }} />
+                    </div>
+                    <div className="form-group">
+                        <label className="label" title="Período al que pertenece este gasto en reportes">
+                            Mes Contable ℹ
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.375rem' }}>
+                            <select className="input" value={formData.accountingMonth} onChange={e => setFormData(p => ({ ...p, accountingMonth: e.target.value }))}>
+                                {['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'].map((m, i) => (
+                                    <option key={i} value={i + 1}>{m}</option>
+                                ))}
+                            </select>
+                            <input type="number" className="input" value={formData.accountingYear} min="2020" max="2099"
+                                onChange={e => setFormData(p => ({ ...p, accountingYear: e.target.value }))} />
+                        </div>
+                    </div>
                 </div>
                 <div className="form-group">
                     <label className="label">
@@ -513,6 +619,67 @@ function TransactionModal({
                     </button>
                 </div>
             </form>
+        </Modal>
+    );
+}
+
+function BulkResultModal({
+    result,
+    onClose,
+}: {
+    result: { successCount: number; failedCount: number; failed: { row: number; reason: string; data: any }[] };
+    onClose: () => void;
+}) {
+    const downloadFailed = () => {
+        const rows = result.failed.map(f =>
+            `Fila ${f.row}\t${f.reason}\t${JSON.stringify(f.data)}`
+        ).join('\n');
+        const blob = new Blob([`Fila\tMotivo\tDatos\n${rows}`], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'filas_con_error.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    return (
+        <Modal isOpen onClose={onClose} title="Resultado de Carga Masiva" size="md">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ textAlign: 'center', padding: '1.25rem', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#16a34a' }}>{result.successCount}</div>
+                    <div style={{ fontSize: '0.875rem', color: '#166534', marginTop: '0.25rem' }}>Registradas exitosamente</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: '1.25rem', background: result.failedCount > 0 ? '#fef2f2' : '#f0fdf4', borderRadius: '12px', border: `1px solid ${result.failedCount > 0 ? '#fecaca' : '#bbf7d0'}` }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: result.failedCount > 0 ? '#dc2626' : '#16a34a' }}>{result.failedCount}</div>
+                    <div style={{ fontSize: '0.875rem', color: result.failedCount > 0 ? '#991b1b' : '#166534', marginTop: '0.25rem' }}>Con errores</div>
+                </div>
+            </div>
+
+            {result.failed.length > 0 && (
+                <>
+                    <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.9375rem', color: '#dc2626' }}>Filas con error</h4>
+                        <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={downloadFailed}>⬇ Descargar errores</button>
+                    </div>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', background: '#fef2f2', borderRadius: '8px', padding: '0.75rem' }}>
+                        {result.failed.map((f, i) => (
+                            <div key={i} style={{ fontSize: '0.8125rem', padding: '0.5rem 0', borderBottom: i < result.failed.length - 1 ? '1px solid #fecaca' : 'none' }}>
+                                <span style={{ fontWeight: 700, color: '#dc2626' }}>Fila {f.row}:</span>{' '}
+                                <span style={{ color: '#7f1d1d' }}>{f.reason}</span>
+                                {f.data?.descripcion && <span style={{ color: '#94a3b8', marginLeft: '0.5rem' }}>({f.data.descripcion})</span>}
+                            </div>
+                        ))}
+                    </div>
+                    <p style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.75rem' }}>
+                        Corrige los errores y vuelve a subir solo las filas fallidas.
+                    </p>
+                </>
+            )}
+
+            <div style={{ marginTop: '1.5rem' }}>
+                <button onClick={onClose} className="btn btn-primary" style={{ width: '100%' }}>Cerrar</button>
+            </div>
         </Modal>
     );
 }

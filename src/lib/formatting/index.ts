@@ -41,6 +41,21 @@ export function formatDateTime(date: string | Date): string {
     });
 }
 
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+/**
+ * Devuelve el período contable en formato "Marzo 2026" de forma consistente.
+ * Acepta un Date, una cadena ISO, o un objeto {month: 1-12, year: 4 digits}.
+ * Usar siempre esta función en reportes — nunca texto libre del usuario.
+ */
+export function formatAccountingMonth(input: Date | string | { month: number; year: number }): string {
+    if (typeof input === 'object' && 'month' in input) {
+        return `${MONTHS_ES[input.month - 1]} ${input.year}`;
+    }
+    const d = typeof input === 'string' ? new Date(input) : input;
+    return `${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 /**
  * Formatea una fecha en formato relativo (ej: "hace 2 horas").
  */

@@ -50,6 +50,7 @@ model Company {
   fixedAssets          FixedAsset[]
   legalBooks           LegalBook[]
   complianceAlerts     ComplianceAlert[]
+  recurringTransactions RecurringTransaction[]
 
   @@index([groupId])
 }
@@ -92,10 +93,11 @@ model AccountClient {
   companyId   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  company      Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  role         CounterpartyType @default(CLIENT)
-  kycRecords   KYCRecord[]
+  company               Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  role                  CounterpartyType      @default(CLIENT)
+  kycRecords            KYCRecord[]
+  recurringTransactions RecurringTransaction[]
 
   @@index([companyId])
 }
@@ -110,8 +112,9 @@ model Category {
   createdAt         DateTime        @default(now())
   debitAccountCode  String?         // cuenta que se debita (catálogo SV)
   creditAccountCode String?         // cuenta que se acredita (catálogo SV)
-  company           Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  transactions      Transaction[]
+  company               Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
 }
 
 model Transaction {
@@ -131,15 +134,18 @@ model Transaction {
   creditDays  Int?              // 30, 60, 90 días crédito
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-  category    Category          @relation(fields: [categoryId], references: [id])
-  company     Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  clientId    String?
-  client      AccountClient?    @relation(fields: [clientId], references: [id])
+  category      Category               @relation(fields: [categoryId], references: [id])
+  company       Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  clientId      String?
+  client        AccountClient?         @relation(fields: [clientId], references: [id])
+  recurringId   String?
+  recurring     RecurringTransaction?  @relation(fields: [recurringId], references: [id])
 
   @@index([companyId])
   @@index([userId])
   @@index([date])
   @@index([isPaid])
+  @@index([recurringId])
 }
 
 model AuditLog {
@@ -437,6 +443,60 @@ enum ProvisionType {
   INDEMNIZACION  // Indemnización (15 días/año de servicio)
   BONO_SEMESTRAL // Bono semestral empresarial
   OTHER          // Otras previsiones
+}
+
+enum RecurringFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+// ─── PAGOS RECURRENTES ───────────────────────────────────────────────────────
+
+model RecurringTransaction {
+  id            String               @id @default(uuid())
+  companyId     String
+  categoryId    String?
+  clientId      String?
+  type          TransactionType
+  amount        Float
+  description   String
+  frequency     RecurringFrequency
+  dayOfMonth    Int?                 // 1-31: día de ejecución (MONTHLY)
+  cutoffDay     Int?                 // día de corte (tarjetas de crédito)
+  startDate     DateTime
+  endDate       DateTime?
+  nextRunDate   DateTime
+  isActive      Boolean              @default(true)
+  notifyBefore  Boolean              @default(true)
+  notifyOnDue   Boolean              @default(true)
+  createdBy     String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  company       Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category      Category?            @relation(fields: [categoryId], references: [id])
+  client        AccountClient?       @relation(fields: [clientId], references: [id])
+  transactions  Transaction[]
+
+  @@index([companyId])
+  @@index([nextRunDate])
+  @@index([isActive])
+}
+
+model NotificationLog {
+  id          String   @id @default(uuid())
+  recurringId String
+  type        String   // "BEFORE" | "ON_DUE"
+  telegramId  String
+  companyId   String
+  sentAt      DateTime @default(now())
+
+  @@index([recurringId])
+  @@index([sentAt])
+  @@index([recurringId, type, telegramId])
 }
 
 // ─── LIBROS LEGALES ──────────────────────────────────────────────────────────

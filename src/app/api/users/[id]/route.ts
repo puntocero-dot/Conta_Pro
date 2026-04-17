@@ -18,19 +18,26 @@ export async function PUT(
             return NextResponse.json({ error: 'Solo SUPER_ADMIN puede cambiar roles' }, { status: 403 });
         }
 
-        const { role } = await request.json();
-        if (!role || !VALID_ROLES.includes(role)) {
+        const { role, email } = await request.json();
+        if (role && !VALID_ROLES.includes(role)) {
             return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
         }
 
-        // Prevent demoting yourself
-        if (id === auth.userId && role !== 'SUPER_ADMIN') {
+        if (id === auth.userId && role && role !== 'SUPER_ADMIN') {
             return NextResponse.json({ error: 'No puedes cambiar tu propio rol' }, { status: 400 });
+        }
+
+        const updateData: Record<string, unknown> = {};
+        if (role) updateData.role = role;
+        if (email) {
+            const existing = await prisma.user.findFirst({ where: { email: email.trim().toLowerCase(), NOT: { id } } });
+            if (existing) return NextResponse.json({ error: 'El email ya está en uso' }, { status: 409 });
+            updateData.email = email.trim().toLowerCase();
         }
 
         const user = await prisma.user.update({
             where: { id },
-            data: { role: role as any },
+            data: updateData,
             select: { id: true, email: true, role: true },
         });
 

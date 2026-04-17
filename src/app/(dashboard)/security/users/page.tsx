@@ -27,12 +27,16 @@ const ROLE_COLORS: Record<string, string> = {
     CLIENTE: '#64748b',
 };
 
+type ModalMode = 'create' | 'edit-role' | 'edit-email' | 'delete' | null;
+
 export default function SecurityUsersPage() {
     const { showToast } = useToast();
     const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [editingUser, setEditingUser] = useState<AppUser | null>(null);
+    const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
+    const [modalMode, setModalMode] = useState<ModalMode>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -41,6 +45,12 @@ export default function SecurityUsersPage() {
             if (res.ok) {
                 const data = await res.json();
                 setUsers(data.users || []);
+            }
+            // Get current user id from token
+            const meRes = await fetch('/api/auth/me', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (meRes.ok) {
+                const me = await meRes.json();
+                setCurrentUserId(me.user?.id || null);
             }
         } catch {
             // silent
@@ -51,6 +61,32 @@ export default function SecurityUsersPage() {
 
     useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
+    const openModal = (user: AppUser | null, mode: ModalMode) => {
+        setSelectedUser(user);
+        setModalMode(mode);
+    };
+
+    const closeModal = () => {
+        setSelectedUser(null);
+        setModalMode(null);
+    };
+
+    const handleCreate = async (email: string, password: string, role: string) => {
+        const res = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ email, password, role }),
+        });
+        if (res.ok) {
+            showToast('Usuario creado correctamente', 'success');
+            closeModal();
+            fetchUsers();
+        } else {
+            const data = await res.json();
+            showToast(data.error || 'Error al crear usuario', 'error');
+        }
+    };
+
     const handleRoleChange = async (userId: string, newRole: string) => {
         const res = await fetch(`/api/users/${userId}`, {
             method: 'PUT',
@@ -59,10 +95,41 @@ export default function SecurityUsersPage() {
         });
         if (res.ok) {
             showToast('Rol actualizado', 'success');
-            setEditingUser(null);
+            closeModal();
             fetchUsers();
         } else {
             showToast('Error al actualizar rol', 'error');
+        }
+    };
+
+    const handleEmailChange = async (userId: string, newEmail: string) => {
+        const res = await fetch(`/api/users/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ email: newEmail }),
+        });
+        if (res.ok) {
+            showToast('Email actualizado', 'success');
+            closeModal();
+            fetchUsers();
+        } else {
+            const data = await res.json();
+            showToast(data.error || 'Error al actualizar email', 'error');
+        }
+    };
+
+    const handleDelete = async (userId: string) => {
+        const res = await fetch(`/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (res.ok) {
+            showToast('Usuario eliminado', 'success');
+            closeModal();
+            fetchUsers();
+        } else {
+            const data = await res.json();
+            showToast(data.error || 'Error al eliminar usuario', 'error');
         }
     };
 
@@ -72,9 +139,14 @@ export default function SecurityUsersPage() {
 
     return (
         <div className="animate-fade-in">
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{ marginBottom: '0.25rem' }}>Gestión de Usuarios</h1>
-                <p>Administración de roles y accesos del sistema</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                <div>
+                    <h1 style={{ marginBottom: '0.25rem' }}>Gestión de Usuarios</h1>
+                    <p>Administración de roles y accesos del sistema</p>
+                </div>
+                <button className="btn btn-primary" onClick={() => openModal(null, 'create')}>
+                    + Crear Usuario
+                </button>
             </div>
 
             <div className="card" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem' }}>
@@ -137,13 +209,31 @@ export default function SecurityUsersPage() {
                                         {formatDate(user.createdAt)}
                                     </td>
                                     <td style={{ padding: '0.875rem 1rem' }}>
-                                        <button
-                                            className="btn btn-ghost"
-                                            style={{ fontSize: '0.8125rem' }}
-                                            onClick={() => setEditingUser(user)}
-                                        >
-                                            Cambiar rol
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                            <button
+                                                className="btn btn-ghost"
+                                                style={{ fontSize: '0.8125rem' }}
+                                                onClick={() => openModal(user, 'edit-role')}
+                                            >
+                                                Cambiar rol
+                                            </button>
+                                            <button
+                                                className="btn btn-ghost"
+                                                style={{ fontSize: '0.8125rem' }}
+                                                onClick={() => openModal(user, 'edit-email')}
+                                            >
+                                                Editar email
+                                            </button>
+                                            {user.id !== currentUserId && (
+                                                <button
+                                                    className="btn btn-ghost"
+                                                    style={{ fontSize: '0.8125rem', color: '#dc2626' }}
+                                                    onClick={() => openModal(user, 'delete')}
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -152,28 +242,70 @@ export default function SecurityUsersPage() {
                 )}
             </div>
 
-            {editingUser && (
+            {modalMode === 'create' && (
+                <CreateUserModal onClose={closeModal} onConfirm={handleCreate} />
+            )}
+            {modalMode === 'edit-role' && selectedUser && (
                 <ChangeRoleModal
-                    user={editingUser}
-                    onClose={() => setEditingUser(null)}
-                    onConfirm={(newRole) => handleRoleChange(editingUser.id, newRole)}
+                    user={selectedUser}
+                    onClose={closeModal}
+                    onConfirm={(role) => handleRoleChange(selectedUser.id, role)}
+                />
+            )}
+            {modalMode === 'edit-email' && selectedUser && (
+                <EditEmailModal
+                    user={selectedUser}
+                    onClose={closeModal}
+                    onConfirm={(email) => handleEmailChange(selectedUser.id, email)}
+                />
+            )}
+            {modalMode === 'delete' && selectedUser && (
+                <DeleteUserModal
+                    user={selectedUser}
+                    onClose={closeModal}
+                    onConfirm={() => handleDelete(selectedUser.id)}
                 />
             )}
         </div>
     );
 }
 
-function ChangeRoleModal({
-    user,
-    onClose,
-    onConfirm,
-}: {
-    user: AppUser;
-    onClose: () => void;
-    onConfirm: (role: string) => void;
-}) {
-    const [role, setRole] = useState(user.role);
+function CreateUserModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (email: string, password: string, role: string) => void }) {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [role, setRole] = useState('CLIENTE');
 
+    return (
+        <Modal isOpen onClose={onClose} title="Crear Nuevo Usuario" size="sm">
+            <div className="form-group">
+                <label className="label">Email</label>
+                <input type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@empresa.com" />
+            </div>
+            <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label className="label">Contraseña inicial</label>
+                <input type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" />
+            </div>
+            <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label className="label">Rol</label>
+                <select className="input" value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                    <option value="CONTADOR">Contador</option>
+                    <option value="AUDITOR">Auditor</option>
+                    <option value="CLIENTE">Cliente</option>
+                </select>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button onClick={() => onConfirm(email, password, role)} className="btn btn-primary" style={{ flex: 2 }}>
+                    Crear Usuario
+                </button>
+            </div>
+        </Modal>
+    );
+}
+
+function ChangeRoleModal({ user, onClose, onConfirm }: { user: AppUser; onClose: () => void; onConfirm: (role: string) => void }) {
+    const [role, setRole] = useState(user.role);
     return (
         <Modal isOpen onClose={onClose} title="Cambiar Rol de Usuario" size="sm">
             <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.25rem' }}>
@@ -190,8 +322,38 @@ function ChangeRoleModal({
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                 <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
-                <button onClick={() => onConfirm(role)} className="btn btn-primary" style={{ flex: 2 }}>
-                    Guardar cambio
+                <button onClick={() => onConfirm(role)} className="btn btn-primary" style={{ flex: 2 }}>Guardar cambio</button>
+            </div>
+        </Modal>
+    );
+}
+
+function EditEmailModal({ user, onClose, onConfirm }: { user: AppUser; onClose: () => void; onConfirm: (email: string) => void }) {
+    const [email, setEmail] = useState(user.email);
+    return (
+        <Modal isOpen onClose={onClose} title="Editar Email de Usuario" size="sm">
+            <div className="form-group">
+                <label className="label">Nuevo Email</label>
+                <input type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button onClick={() => onConfirm(email)} className="btn btn-primary" style={{ flex: 2 }}>Guardar</button>
+            </div>
+        </Modal>
+    );
+}
+
+function DeleteUserModal({ user, onClose, onConfirm }: { user: AppUser; onClose: () => void; onConfirm: () => void }) {
+    return (
+        <Modal isOpen onClose={onClose} title="Eliminar Usuario" size="sm">
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                ¿Estás seguro de eliminar a <strong>{user.email}</strong>? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button onClick={onConfirm} className="btn btn-primary" style={{ flex: 2, background: '#dc2626', borderColor: '#dc2626' }}>
+                    Eliminar
                 </button>
             </div>
         </Modal>

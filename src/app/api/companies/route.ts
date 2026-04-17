@@ -92,19 +92,35 @@ export async function POST(request: NextRequest) {
 
         // Crear categorías por defecto con mapeo contable SV
         const categories = [
-            { name: 'Ventas de Bienes',      type: 'INGRESO' as TransactionType, icon: '💰', color: '#10b981', debitAccountCode: '1101', creditAccountCode: '4101' },
-            { name: 'Prestación de Servicios', type: 'INGRESO' as TransactionType, icon: '🛠', color: '#3b82f6', debitAccountCode: '1101', creditAccountCode: '4102' },
-            { name: 'Otros Ingresos',        type: 'INGRESO' as TransactionType, icon: '📈', color: '#8b5cf6', debitAccountCode: '1101', creditAccountCode: '4104' },
-            { name: 'Sueldos y Salarios',    type: 'EGRESO' as TransactionType,  icon: '👥', color: '#ef4444', debitAccountCode: '6101', creditAccountCode: '1101' },
-            { name: 'Cargas Sociales',       type: 'EGRESO' as TransactionType,  icon: '🏛', color: '#f59e0b', debitAccountCode: '6102', creditAccountCode: '1101' },
-            { name: 'Alquiler',              type: 'EGRESO' as TransactionType,  icon: '🏢', color: '#6b7280', debitAccountCode: '6107', creditAccountCode: '1101' },
-            { name: 'Servicios Básicos',     type: 'EGRESO' as TransactionType,  icon: '💡', color: '#f97316', debitAccountCode: '6108', creditAccountCode: '1101' },
-            { name: 'Telecomunicaciones',    type: 'EGRESO' as TransactionType,  icon: '📱', color: '#06b6d4', debitAccountCode: '6110', creditAccountCode: '1101' },
-            { name: 'Papelería y Útiles',    type: 'EGRESO' as TransactionType,  icon: '📄', color: '#84cc16', debitAccountCode: '6111', creditAccountCode: '1101' },
-            { name: 'Publicidad',            type: 'EGRESO' as TransactionType,  icon: '📢', color: '#ec4899', debitAccountCode: '6112', creditAccountCode: '1101' },
-            { name: 'Mantenimiento',         type: 'EGRESO' as TransactionType,  icon: '🔧', color: '#78716c', debitAccountCode: '6113', creditAccountCode: '1101' },
-            { name: 'Intereses Bancarios',   type: 'EGRESO' as TransactionType,  icon: '🏦', color: '#dc2626', debitAccountCode: '6201', creditAccountCode: '1101' },
-            { name: 'Gastos Generales',      type: 'EGRESO' as TransactionType,  icon: '💸', color: '#94a3b8', debitAccountCode: '6302', creditAccountCode: '1101' },
+            // INGRESOS
+            { name: 'Ventas de Bienes',         type: 'INGRESO' as TransactionType, icon: '💰', color: '#10b981', debitAccountCode: '1101', creditAccountCode: '4101' },
+            { name: 'Prestación de Servicios',  type: 'INGRESO' as TransactionType, icon: '🛠', color: '#3b82f6', debitAccountCode: '1101', creditAccountCode: '4102' },
+            { name: 'Intereses Ganados',         type: 'INGRESO' as TransactionType, icon: '📈', color: '#6366f1', debitAccountCode: '1101', creditAccountCode: '4201' },
+            { name: 'Ganancia Cambiaria',        type: 'INGRESO' as TransactionType, icon: '💱', color: '#8b5cf6', debitAccountCode: '1101', creditAccountCode: '4202' },
+            { name: 'Otros Ingresos',            type: 'INGRESO' as TransactionType, icon: '💹', color: '#a855f7', debitAccountCode: '1101', creditAccountCode: '4104' },
+            // EGRESOS — Gastos Operativos
+            { name: 'Sueldos y Salarios',        type: 'EGRESO' as TransactionType,  icon: '👥', color: '#ef4444', debitAccountCode: '6101', creditAccountCode: '1101' },
+            { name: 'Cargas Sociales',           type: 'EGRESO' as TransactionType,  icon: '🏛', color: '#f59e0b', debitAccountCode: '6102', creditAccountCode: '1101' },
+            { name: 'Honorarios Profesionales',  type: 'EGRESO' as TransactionType,  icon: '🎓', color: '#7c3aed', debitAccountCode: '6103', creditAccountCode: '1101' },
+            { name: 'Alquiler',                  type: 'EGRESO' as TransactionType,  icon: '🏢', color: '#6b7280', debitAccountCode: '6107', creditAccountCode: '1101' },
+            { name: 'Servicios Básicos',         type: 'EGRESO' as TransactionType,  icon: '💡', color: '#f97316', debitAccountCode: '6108', creditAccountCode: '1101' },
+            { name: 'Telecomunicaciones',        type: 'EGRESO' as TransactionType,  icon: '📱', color: '#06b6d4', debitAccountCode: '6110', creditAccountCode: '1101' },
+            { name: 'Papelería y Útiles',        type: 'EGRESO' as TransactionType,  icon: '📄', color: '#84cc16', debitAccountCode: '6111', creditAccountCode: '1101' },
+            { name: 'Publicidad',                type: 'EGRESO' as TransactionType,  icon: '📢', color: '#ec4899', debitAccountCode: '6112', creditAccountCode: '1101' },
+            { name: 'Mantenimiento',             type: 'EGRESO' as TransactionType,  icon: '🔧', color: '#78716c', debitAccountCode: '6113', creditAccountCode: '1101' },
+            { name: 'Impuestos Municipales',     type: 'EGRESO' as TransactionType,  icon: '🏙', color: '#0891b2', debitAccountCode: '6114', creditAccountCode: '1101' },
+            { name: 'Impuestos Fiscales',        type: 'EGRESO' as TransactionType,  icon: '🧾', color: '#0284c7', debitAccountCode: '6115', creditAccountCode: '1101' },
+            { name: 'Seguros',                   type: 'EGRESO' as TransactionType,  icon: '🛡', color: '#4f46e5', debitAccountCode: '6116', creditAccountCode: '1101' },
+            { name: 'Combustible y Lubricantes', type: 'EGRESO' as TransactionType,  icon: '⛽', color: '#92400e', debitAccountCode: '6117', creditAccountCode: '1101' },
+            { name: 'Viáticos y Representación', type: 'EGRESO' as TransactionType,  icon: '✈️', color: '#0f766e', debitAccountCode: '6118', creditAccountCode: '1101' },
+            { name: 'Capacitación',              type: 'EGRESO' as TransactionType,  icon: '📚', color: '#b45309', debitAccountCode: '6119', creditAccountCode: '1101' },
+            { name: 'Suscripciones y Software',  type: 'EGRESO' as TransactionType,  icon: '💻', color: '#0369a1', debitAccountCode: '6121', creditAccountCode: '1101' },
+            // EGRESOS — Gastos Financieros
+            { name: 'Intereses Bancarios',       type: 'EGRESO' as TransactionType,  icon: '🏦', color: '#dc2626', debitAccountCode: '6201', creditAccountCode: '1101' },
+            { name: 'Comisiones Bancarias',      type: 'EGRESO' as TransactionType,  icon: '💳', color: '#b91c1c', debitAccountCode: '6202', creditAccountCode: '1101' },
+            // EGRESOS — Otros
+            { name: 'Depreciación',              type: 'EGRESO' as TransactionType,  icon: '📉', color: '#475569', debitAccountCode: '6301', creditAccountCode: '1601' },
+            { name: 'Gastos Generales',          type: 'EGRESO' as TransactionType,  icon: '💸', color: '#94a3b8', debitAccountCode: '6302', creditAccountCode: '1101' },
         ];
 
         await prisma.category.createMany({
