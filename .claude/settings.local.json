@@ -13,7 +13,10 @@
       "Bash(node scripts/apply-migration.mjs)",
       "Bash(node scripts/seed-app-factory.mjs)",
       "Bash(npm audit:*)",
-      "Bash(echo \"EXIT CODE: $?\")"
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(git add *)",
+      "Bash(git commit -m 'feat: assign user to company from /security/users *)",
+      "Bash(git push *)"
     ]
   }
 }

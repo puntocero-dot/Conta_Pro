@@ -27,7 +27,9 @@ const ROLE_COLORS: Record<string, string> = {
     CLIENTE: '#64748b',
 };
 
-type ModalMode = 'create' | 'edit-role' | 'edit-email' | 'delete' | null;
+type ModalMode = 'create' | 'edit-role' | 'edit-email' | 'delete' | 'assign-company' | null;
+
+interface CompanyOption { id: string; name: string; }
 
 export default function SecurityUsersPage() {
     const { showToast } = useToast();
@@ -115,6 +117,22 @@ export default function SecurityUsersPage() {
         } else {
             const data = await res.json();
             showToast(data.error || 'Error al actualizar email', 'error');
+        }
+    };
+
+    const handleAssignCompany = async (email: string, companyId: string, role: string) => {
+        const res = await fetch(`/api/companies/${companyId}/members`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ email, role }),
+        });
+        if (res.ok) {
+            showToast('Usuario asignado a la empresa', 'success');
+            closeModal();
+            fetchUsers();
+        } else {
+            const data = await res.json();
+            showToast(data.error || 'Error al asignar empresa', 'error');
         }
     };
 
@@ -224,6 +242,13 @@ export default function SecurityUsersPage() {
                                             >
                                                 Editar email
                                             </button>
+                                            <button
+                                                className="btn btn-ghost"
+                                                style={{ fontSize: '0.8125rem' }}
+                                                onClick={() => openModal(user, 'assign-company')}
+                                            >
+                                                Asignar empresa
+                                            </button>
                                             {user.id !== currentUserId && (
                                                 <button
                                                     className="btn btn-ghost"
@@ -257,6 +282,13 @@ export default function SecurityUsersPage() {
                     user={selectedUser}
                     onClose={closeModal}
                     onConfirm={(email) => handleEmailChange(selectedUser.id, email)}
+                />
+            )}
+            {modalMode === 'assign-company' && selectedUser && (
+                <AssignCompanyModal
+                    user={selectedUser}
+                    onClose={closeModal}
+                    onConfirm={(companyId, role) => handleAssignCompany(selectedUser.email, companyId, role)}
                 />
             )}
             {modalMode === 'delete' && selectedUser && (
@@ -339,6 +371,64 @@ function EditEmailModal({ user, onClose, onConfirm }: { user: AppUser; onClose: 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                 <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
                 <button onClick={() => onConfirm(email)} className="btn btn-primary" style={{ flex: 2 }}>Guardar</button>
+            </div>
+        </Modal>
+    );
+}
+
+function AssignCompanyModal({ user, onClose, onConfirm }: { user: AppUser; onClose: () => void; onConfirm: (companyId: string, role: string) => void }) {
+    const [companies, setCompanies] = useState<CompanyOption[]>([]);
+    const [companyId, setCompanyId] = useState('');
+    const [role, setRole] = useState('CLIENTE');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/companies', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.ok ? r.json() : { companies: [] })
+            .then(data => {
+                setCompanies((data.companies || []).map((c: any) => ({ id: c.id, name: c.name })));
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
+    }, []);
+
+    return (
+        <Modal isOpen onClose={onClose} title="Asignar Usuario a Empresa" size="sm">
+            <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.25rem' }}>
+                Usuario: <strong>{user.email}</strong>
+            </p>
+            <div className="form-group">
+                <label className="label">Empresa</label>
+                {loading ? (
+                    <div style={{ padding: '0.5rem', color: '#94a3b8' }}>Cargando empresas…</div>
+                ) : companies.length === 0 ? (
+                    <div style={{ padding: '0.5rem', color: '#94a3b8' }}>No hay empresas disponibles</div>
+                ) : (
+                    <select className="input" value={companyId} onChange={e => setCompanyId(e.target.value)}>
+                        <option value="">Selecciona una empresa…</option>
+                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                )}
+            </div>
+            <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label className="label">Rol en la empresa</label>
+                <select className="input" value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                    <option value="CONTADOR">Contador</option>
+                    <option value="AUDITOR">Auditor</option>
+                    <option value="CLIENTE">Cliente</option>
+                </select>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancelar</button>
+                <button
+                    onClick={() => companyId && onConfirm(companyId, role)}
+                    className="btn btn-primary"
+                    style={{ flex: 2 }}
+                    disabled={!companyId}
+                >
+                    Asignar
+                </button>
             </div>
         </Modal>
     );

@@ -15,16 +15,12 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
-        // Buscar empresas vinculadas al usuario
+        // SUPER_ADMIN ve todas; el resto solo las suyas
         const companies = await prisma.company.findMany({
-            where: {
-                users: {
-                    some: { id: auth.userId }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
+            where: auth.role === 'SUPER_ADMIN'
+                ? {}
+                : { users: { some: { id: auth.userId } } },
+            orderBy: { createdAt: 'desc' }
         });
 
         // Desencriptar taxId (NIT) para mostrarlo en la UI
