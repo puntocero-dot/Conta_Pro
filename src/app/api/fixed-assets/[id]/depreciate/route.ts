@@ -11,6 +11,9 @@ export async function POST(
   try {
     const auth = await getAuthFromRequest(request);
     if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const { requirePermission } = await import('@/lib/auth/authorize');
+    const permError = requirePermission(auth.role, 'fixed-asset:update');
+    if (permError) return permError;
 
     const { id } = await params;
     const asset = await (prisma.fixedAsset as any).findUnique({

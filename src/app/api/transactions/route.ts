@@ -133,6 +133,9 @@ export async function POST(request: NextRequest) {
             finalCategoryId = defaultCategory.id;
         }
 
+        // CLIENTE siempre crea en PENDING_APPROVAL para que el Contador apruebe
+        const initialStatus = auth.role === 'CLIENTE' ? 'PENDING_APPROVAL' : 'ACTIVE';
+
         // Crear la transacción
         const transaction = await (prisma.transaction as any).create({
             data: {
@@ -147,6 +150,7 @@ export async function POST(request: NextRequest) {
                 dueDate: dueDate ? new Date(dueDate) : null,
                 isPaid: isPaid !== undefined ? Boolean(isPaid) : true,
                 creditDays: creditDays ? parseInt(creditDays.toString()) : null,
+                status: initialStatus,
             },
             include: {
                 category: true,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
 import { apiError } from '@/lib/api/error-response';
+import { requirePermission } from '@/lib/auth/authorize';
 
 const PROVISION_LABELS: Record<string, string> = {
     VACATION: 'Vacaciones',
@@ -49,6 +50,8 @@ export async function POST(request: NextRequest) {
     try {
         const auth = await getAuthFromRequest(request);
         if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        const permError = requirePermission(auth.role, 'provision:create');
+        if (permError) return permError;
 
         const companyId = request.headers.get('x-company-id');
         if (!companyId) return NextResponse.json({ error: 'Empresa requerida' }, { status: 400 });

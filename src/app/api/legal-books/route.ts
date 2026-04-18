@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
+import { requirePermission } from '@/lib/auth/authorize';
 import { LEGAL_BOOK_LABELS } from '@/lib/sv-legal-config';
 
 export async function GET(request: NextRequest) {
@@ -39,6 +40,8 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthFromRequest(request);
     if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const permError = requirePermission(auth.role, 'legal-book:create');
+    if (permError) return permError;
 
     const companyId = await getCompanyIdFromRequest(request, auth.userId);
     if (!companyId) return NextResponse.json({ error: 'Sin empresa' }, { status: 400 });

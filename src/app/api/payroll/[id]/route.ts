@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthFromRequest } from '@/lib/auth/jwt';
 import { apiError } from '@/lib/api/error-response';
+import { requirePermission } from '@/lib/auth/authorize';
 
 export async function GET(
     request: NextRequest,
@@ -35,6 +36,8 @@ export async function DELETE(
         const { id } = await params;
         const auth = await getAuthFromRequest(request);
         if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        const permError = requirePermission(auth.role, 'payroll:delete');
+        if (permError) return permError;
 
         const companyId = request.headers.get('x-company-id');
         if (!companyId) return NextResponse.json({ error: 'Empresa requerida' }, { status: 400 });

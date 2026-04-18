@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCompany } from '@/context/CompanyContext';
 import { useFilter } from '@/context/FilterContext';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonStatsGrid, SkeletonTable } from '@/components/ui/Skeleton';
@@ -35,6 +36,8 @@ export default function TransactionsPage() {
     const { activeCompanyId, isLoading: companyLoading } = useCompany();
     const { startDate, endDate } = useFilter();
     const { showToast } = useToast();
+    const { role } = useAuth();
+    const isCliente = role === 'CLIENTE';
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [annulledTransactions, setAnnulledTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
@@ -216,22 +219,27 @@ export default function TransactionsPage() {
                     : transactions.length > 0 ? `${transactions.length} operaciones en el período` : 'Historial financiero y control de caja'}
             >
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={() => setShowBulkDocs(v => !v)} title="Ver formato de columnas">
-                        ℹ️ Formato CSV
-                    </button>
-                    <button className="btn btn-secondary" style={{ fontSize: '0.8125rem' }} onClick={downloadCsvTemplate}>
-                        ⬇ Plantilla
-                    </button>
-                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-                        📁 Carga Masiva
-                        <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkImport} />
-                    </label>
+                    {!isCliente && (
+                        <>
+                            <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={() => setShowBulkDocs(v => !v)} title="Ver formato de columnas">
+                                ℹ️ Formato CSV
+                            </button>
+                            <button className="btn btn-secondary" style={{ fontSize: '0.8125rem' }} onClick={downloadCsvTemplate}>
+                                ⬇ Plantilla
+                            </button>
+                            <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                                📁 Carga Masiva
+                                <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkImport} />
+                            </label>
+                        </>
+                    )}
                     <button
                         onClick={() => setShowNewModal(true)}
                         className="btn btn-primary"
                         disabled={!activeCompanyId}
+                        title={isCliente ? 'La transacción quedará pendiente de aprobación del Contador' : undefined}
                     >
-                        <PlusIcon size={16} /> Nueva Transacción
+                        <PlusIcon size={16} /> {isCliente ? 'Solicitar Transacción' : 'Nueva Transacción'}
                     </button>
                 </div>
             </PageHeader>
@@ -250,6 +258,22 @@ export default function TransactionsPage() {
                         <StatCard label="Egresos" value={formatCurrency(totalEgresos)} icon={<TrendingDownIcon size={16} />} variant="expense" />
                         <StatCard label="Balance neto" value={formatCurrency(balance)} icon={<WalletIcon size={16} />} variant={balance >= 0 ? 'neutral' : 'expense'} />
                     </div>
+
+                    {/* Banner informativo para CLIENTE */}
+                    {isCliente && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.75rem',
+                            background: '#eff6ff', border: '1px solid #bfdbfe',
+                            borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem',
+                            fontSize: '0.875rem', color: '#1d4ed8',
+                        }}>
+                            <span style={{ fontSize: '1.1rem' }}>ℹ️</span>
+                            <span>
+                                Modo <strong>solo lectura</strong>. Las transacciones que registres quedarán
+                                <strong> pendientes de aprobación</strong> del Contador antes de afectar el balance.
+                            </span>
+                        </div>
+                    )}
 
                     {/* Filters */}
                     <div className={styles.filtersRow}>
@@ -321,12 +345,17 @@ export default function TransactionsPage() {
                                             >
                                                 {restoringId === transaction.id ? '...' : '↩ Recuperar'}
                                             </button>
+                                        ) : isCliente ? (
+                                            // CLIENTE: solo puede ver, sin editar ni anular
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                                {transaction.status === 'PENDING_APPROVAL' ? 'En revisión' : 'Solo lectura'}
+                                            </span>
                                         ) : (
                                             <>
                                                 {transaction.status === 'PENDING_APPROVAL' && (
                                                     <button
                                                       onClick={async () => {
-                                                        if (confirm('¿Deseas aprobar esta transacción registrada por el bot?')) {
+                                                        if (confirm('¿Deseas aprobar esta transacción?')) {
                                                           const res = await fetch(`/api/transactions/${transaction.id}`, {
                                                             method: 'PATCH',
                                                             headers: { 'Content-Type': 'application/json', 'x-company-id': activeCompanyId || '', 'X-Requested-With': 'XMLHttpRequest' },

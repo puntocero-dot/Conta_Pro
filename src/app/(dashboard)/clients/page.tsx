@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCompany } from '@/context/CompanyContext';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonStatsGrid, SkeletonTable } from '@/components/ui/Skeleton';
@@ -25,6 +26,8 @@ interface Client {
 export default function ClientsPage() {
     const { activeCompanyId, isLoading: companyLoading } = useCompany();
     const { showToast } = useToast();
+    const { role } = useAuth();
+    const isCliente = role === 'CLIENTE';
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
@@ -126,15 +129,17 @@ export default function ClientsPage() {
                     <h1 style={{ marginBottom: '0.25rem' }}>Clientes</h1>
                     <p>Gestión de cartera y contactos</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
-                        📁 Carga Masiva
-                        <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkImport} />
-                    </label>
-                    <button onClick={() => setShowNewModal(true)} className="btn btn-primary" disabled={!activeCompanyId}>
-                        <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
-                    </button>
-                </div>
+                {!isCliente && (
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                            📁 Carga Masiva
+                            <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleBulkImport} />
+                        </label>
+                        <button onClick={() => setShowNewModal(true)} className="btn btn-primary" disabled={!activeCompanyId}>
+                            <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Cliente
+                        </button>
+                    </div>
+                )}
             </div>
 
             {!activeCompanyId ? (
@@ -216,31 +221,35 @@ export default function ClientsPage() {
                                             <p>Saldo</p>
                                             <h4 className={(client.balance ?? 0) > 0 ? styles.positive : ''}>{formatCurrency(client.balance ?? 0)}</h4>
                                         </div>
-                                        <div style={{ position: 'relative' }}>
-                                            <button 
-                                                className="btn btn-ghost" 
-                                                style={{ fontSize: '1.25rem', padding: '0.25rem 0.5rem' }} 
-                                                aria-label="Opciones"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenuId(activeMenuId === client.id ? null : client.id);
-                                                }}
-                                            >
-                                                ⋮
-                                            </button>
-                                            
-                                            {activeMenuId === client.id && (
-                                                <div className={styles.dropdownMenu}>
-                                                    <button onClick={() => { setEditingClient(client); setActiveMenuId(null); }}>✏️ Editar</button>
-                                                    <button 
-                                                        className={styles.deleteOption} 
-                                                        onClick={() => { setDeletingClient(client); setActiveMenuId(null); }}
-                                                    >
-                                                        🗑️ Eliminar
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                        {isCliente ? (
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>Solo lectura</span>
+                                        ) : (
+                                            <div style={{ position: 'relative' }}>
+                                                <button
+                                                    className="btn btn-ghost"
+                                                    style={{ fontSize: '1.25rem', padding: '0.25rem 0.5rem' }}
+                                                    aria-label="Opciones"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveMenuId(activeMenuId === client.id ? null : client.id);
+                                                    }}
+                                                >
+                                                    ⋮
+                                                </button>
+
+                                                {activeMenuId === client.id && (
+                                                    <div className={styles.dropdownMenu}>
+                                                        <button onClick={() => { setEditingClient(client); setActiveMenuId(null); }}>✏️ Editar</button>
+                                                        <button
+                                                            className={styles.deleteOption}
+                                                            onClick={() => { setDeletingClient(client); setActiveMenuId(null); }}
+                                                        >
+                                                            🗑️ Eliminar
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 ))
                             )}

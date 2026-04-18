@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthFromRequest(request);
     if (!auth) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const { requirePermission } = await import('@/lib/auth/authorize');
+    const permError = requirePermission(auth.role, 'fixed-asset:create');
+    if (permError) return permError;
 
     const companyId = await getCompanyIdFromRequest(request, auth.userId);
     if (!companyId) return NextResponse.json({ error: 'Sin empresa' }, { status: 400 });
