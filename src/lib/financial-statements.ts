@@ -123,7 +123,37 @@ export async function buildBalanceSheet(companyId: string, date: Date): Promise<
 
   const totalAssets = sum(assetsCurrent) + sum(assetsNonCurrent);
   const totalLiab = sum(liabCurrent) + sum(liabNonCurrent);
-  const totalEquity = sum(equityAccounts);
+  const explicitEquity = sum(equityAccounts);
+
+  // Derivar "Utilidades del Período" del estado de resultados acumulado hasta la fecha.
+  // Las transacciones generan asientos en cuentas de ingreso/gasto pero no en patrimonio
+  // directamente; el cierre contable se hace al final del ejercicio. Mientras tanto,
+  // el resultado del período es parte implícita del patrimonio.
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const incomeStmt = await buildIncomeStatement(companyId, startOfYear, date);
+  const periodNetIncome = incomeStmt.netIncome;
+
+  // Agregar utilidades del período como cuenta sintética de patrimonio si no existe ya
+  // una cuenta 3103 que las capture (evitar doble conteo)
+  const has3103 = equityAccounts.some(a => a.code.startsWith('3103'));
+  const utilidadesDelPeriodo: AccountBalance | null =
+    !has3103 && Math.abs(periodNetIncome) > 0.01
+      ? {
+          code: '3103',
+          name: 'Utilidades del Período',
+          type: 'PATRIMONIO',
+          group: 'Patrimonio',
+          debit: periodNetIncome < 0 ? Math.abs(periodNetIncome) : 0,
+          credit: periodNetIncome > 0 ? periodNetIncome : 0,
+          balance: periodNetIncome,
+        }
+      : null;
+
+  const allEquityAccounts = utilidadesDelPeriodo
+    ? [...equityAccounts, utilidadesDelPeriodo]
+    : equityAccounts;
+
+  const totalEquity = explicitEquity + (utilidadesDelPeriodo?.balance ?? 0);
   const totalLE = totalLiab + totalEquity;
 
   return {
@@ -138,7 +168,7 @@ export async function buildBalanceSheet(companyId: string, date: Date): Promise<
       nonCurrent: { total: sum(liabNonCurrent), accounts: liabNonCurrent },
       total: totalLiab,
     },
-    equity: { total: totalEquity, accounts: equityAccounts },
+    equity: { total: totalEquity, accounts: allEquityAccounts },
     totalLiabilitiesAndEquity: totalLE,
     balanced: Math.abs(totalAssets - totalLE) < 0.01,
   };
@@ -328,14 +358,40 @@ export async function buildCashFlow(
     ? [{ label: 'Abono a Capital de Préstamos', amount: -capitalPaid }]
     : [];
 
-  // Saldo de caja: cuenta 1101
-  const cashAccount = await prisma.account.findFirst({
-    where: { companyId, code: '1101' },
+  // Capital de trabajo: cambio en CxC (1104) y CxP (2101) durante el período
+  const workingCapitalChanges: { label: string; amount: number }[] = [];
+  const [balancesStart, balancesEnd] = await Promise.all([
+    getAccountBalances(companyId, startDate),
+    getAccountBalances(companyId, endDate),
+  ]);
+  const getBalance = (bals: AccountBalance[], prefix: string) =>
+    bals.filter(a => a.code.startsWith(prefix)).reduce((s, a) => s + a.balance, 0);
+
+  const arStart = getBalance(balancesStart, '1104') + getBalance(balancesStart, '1105');
+  const arEnd = getBalance(balancesEnd, '1104') + getBalance(balancesEnd, '1105');
+  const arChange = arStart - arEnd; // aumento de CxC consume efectivo (negativo)
+  if (Math.abs(arChange) > 0.01) {
+    workingCapitalChanges.push({ label: 'Variación en Cuentas por Cobrar', amount: arChange });
+  }
+
+  const apStart = getBalance(balancesStart, '2101') + getBalance(balancesStart, '2102');
+  const apEnd = getBalance(balancesEnd, '2101') + getBalance(balancesEnd, '2102');
+  const apChange = apEnd - apStart; // aumento de CxP genera efectivo (positivo)
+  if (Math.abs(apChange) > 0.01) {
+    workingCapitalChanges.push({ label: 'Variación en Cuentas por Pagar', amount: apChange });
+  }
+
+  // Saldo de caja: todas las cuentas de efectivo (1101, 1102, 1103)
+  const cashCodes = ['1101', '1102', '1103'];
+  const cashAccounts = await prisma.account.findMany({
+    where: { companyId, code: { in: cashCodes } },
+    select: { id: true },
   });
-  const cashBalanceNow = cashAccount
+  const cashAccountIds = cashAccounts.map(a => a.id);
+  const cashBalanceNow = cashAccountIds.length > 0
     ? await (async () => {
         const lines = await prisma.journalEntryLine.findMany({
-          where: { accountId: cashAccount.id },
+          where: { accountId: { in: cashAccountIds } },
           select: { debit: true, credit: true },
         });
         return lines.reduce((s, l) => s + l.debit - l.credit, 0);
@@ -344,7 +400,8 @@ export async function buildCashFlow(
 
   const netOperating =
     incomeStmt.netIncome +
-    addBack.reduce((s, i) => s + i.amount, 0);
+    addBack.reduce((s, i) => s + i.amount, 0) +
+    workingCapitalChanges.reduce((s, i) => s + i.amount, 0);
 
   const netInvesting = investingItems.reduce((s: number, i: { label: string; amount: number }) => s + i.amount, 0);
   const netFinancing = financingItems.reduce((s: number, i: { label: string; amount: number }) => s + i.amount, 0);
@@ -357,7 +414,7 @@ export async function buildCashFlow(
     operating: {
       netIncome: incomeStmt.netIncome,
       addBack,
-      workingCapitalChanges: [],
+      workingCapitalChanges,
       total: netOperating,
     },
     investing: { items: investingItems, total: netInvesting },
@@ -389,27 +446,63 @@ export async function buildEquityStatement(
   const endOfYear = new Date(year, 11, 31, 23, 59, 59);
   const prevEndOfYear = new Date(year - 1, 11, 31, 23, 59, 59);
 
-  const [currentBalances, prevBalances, incomeStmt] = await Promise.all([
+  const [currentBalances, prevBalances, prevIncomeStmt, incomeStmt] = await Promise.all([
     getAccountBalances(companyId, endOfYear),
     getAccountBalances(companyId, prevEndOfYear),
+    buildIncomeStatement(companyId, new Date(year - 1, 0, 1), prevEndOfYear),
     buildIncomeStatement(companyId, startOfYear, endOfYear),
   ]);
 
   const equityAccounts = currentBalances.filter(a => a.type === 'PATRIMONIO');
-  const prevEquity = prevBalances
+  const prevExplicitEquity = prevBalances
     .filter(a => a.type === 'PATRIMONIO')
     .reduce((s, a) => s + a.balance, 0);
 
-  const closingEquity = equityAccounts.reduce((s, a) => s + a.balance, 0);
+  // Patrimonio inicial incluye utilidades retenidas del período anterior
+  const openingEquity = prevExplicitEquity + prevIncomeStmt.netIncome;
+
+  // Capital social (3101): movimientos del año = aportaciones
+  const capitalMovements = await getAccountBalances(companyId, endOfYear, startOfYear);
+  const capitalContributions = capitalMovements
+    .filter(a => a.code.startsWith('3101'))
+    .reduce((s, a) => s + a.balance, 0);
+
+  // Dividendos/distribuciones (3105 o cuentas de distribución)
+  const dividends = capitalMovements
+    .filter(a => a.code.startsWith('3105') || a.code.startsWith('3106'))
+    .reduce((s, a) => s + a.balance, 0);
+
+  // Patrimonio explícito actual + utilidades del período corriente
+  const explicitEquity = equityAccounts.reduce((s, a) => s + a.balance, 0);
+  const closingEquity = explicitEquity + incomeStmt.netIncome;
+
+  // Cuenta sintética de utilidades si no existe 3103
+  const has3103 = equityAccounts.some(a => a.code.startsWith('3103'));
+  const allEquityAccounts = has3103
+    ? equityAccounts
+    : Math.abs(incomeStmt.netIncome) > 0.01
+      ? [
+          ...equityAccounts,
+          {
+            code: '3103',
+            name: 'Utilidades del Período',
+            type: 'PATRIMONIO',
+            group: 'Patrimonio',
+            debit: incomeStmt.netIncome < 0 ? Math.abs(incomeStmt.netIncome) : 0,
+            credit: incomeStmt.netIncome > 0 ? incomeStmt.netIncome : 0,
+            balance: incomeStmt.netIncome,
+          } as AccountBalance,
+        ]
+      : equityAccounts;
 
   return {
     year,
-    openingEquity: prevEquity,
-    capitalContributions: 0,
+    openingEquity,
+    capitalContributions,
     netIncome: incomeStmt.netIncome,
-    dividends: 0,
+    dividends,
     reservaLegal: incomeStmt.reservaLegal,
     closingEquity,
-    accounts: equityAccounts,
+    accounts: allEquityAccounts,
   };
 }

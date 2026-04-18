@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         const [transactions, total] = await Promise.all([
             prisma.transaction.findMany({
                 where: whereClause,
-                include: { category: true },
+                include: { category: true, client: true },
                 orderBy: { date: 'desc' },
                 take: limit,
                 skip: (page - 1) * limit,
@@ -60,7 +60,21 @@ export async function GET(request: NextRequest) {
             prisma.transaction.count({ where: whereClause }),
         ]);
 
-        return NextResponse.json({ transactions, total, page, limit });
+        // Enriquecer con nombre del usuario que registró cada transacción
+        const userIds = [...new Set(transactions.map(t => t.userId).filter(Boolean))];
+        const users = userIds.length > 0
+            ? await (prisma.user as any).findMany({
+                where: { id: { in: userIds } },
+                select: { id: true, name: true, email: true },
+              })
+            : [];
+        const userMap = new Map((users as any[]).map((u: any) => [u.id, u]));
+        const enriched = transactions.map(t => ({
+            ...t,
+            createdBy: userMap.get(t.userId) ?? { id: t.userId, name: 'Desconocido', email: '' },
+        }));
+
+        return NextResponse.json({ transactions: enriched, total, page, limit });
     } catch (error) {
         console.error('Error in GET /api/transactions:', error);
         return apiError('Error al obtener transacciones', 500, error);
@@ -175,6 +189,33 @@ export async function POST(request: NextRequest) {
                 creditAccountCode: trans.category?.creditAccountCode || null,
             }
         );
+
+        // Registro de auditoría para creación
+        try {
+            await (prisma.auditLog as any).create({
+                data: {
+                    userId: auth.userId,
+                    companyId,
+                    action: 'TRANSACTION_CREATED',
+                    resource: 'Transaction',
+                    resourceId: transaction.id,
+                    ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+                    userAgent: request.headers.get('user-agent') || 'Unknown',
+                    newData: {
+                        id: transaction.id,
+                        type,
+                        amount: transaction.amount,
+                        description,
+                        date: transaction.date,
+                        status: initialStatus,
+                        category: (transaction as any).category?.name,
+                    },
+                    result: 'SUCCESS',
+                },
+            });
+        } catch (auditErr) {
+            console.warn('Audit log warning (create):', auditErr);
+        }
 
         // Ledger legacy (mantener por compatibilidad)
         try {

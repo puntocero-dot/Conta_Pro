@@ -30,6 +30,11 @@ interface Transaction {
         icon: string;
         color: string;
     };
+    createdBy?: {
+        id: string;
+        name: string;
+        email: string;
+    };
 }
 
 export default function TransactionsPage() {
@@ -322,12 +327,20 @@ export default function TransactionsPage() {
                                                 <span className={styles.badgePending}>Bot: Pendiente Approval</span>
                                             )}
                                         </h4>
-                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                                             <span className={styles.transactionCategory}>{transaction.category?.name || 'General'}</span>
                                             <span style={{ color: '#cbd5e1' }}>•</span>
                                             <span className={styles.transactionDate}>
                                                 {formatDate(transaction.date)}
                                             </span>
+                                            {transaction.createdBy?.name && (
+                                                <>
+                                                    <span style={{ color: '#cbd5e1' }}>•</span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }} title="Registrado por">
+                                                        👤 {transaction.createdBy.name}
+                                                    </span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                     <div className={`${styles.transactionAmount} ${transaction.type === 'INGRESO' ? styles.amountIncome : styles.amountExpense} ${transaction.status === 'ANNULLED' ? styles.statusAnnulled : ''}`}>

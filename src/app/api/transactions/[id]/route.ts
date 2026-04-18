@@ -112,6 +112,28 @@ export async function PATCH(
             include: { category: true },
         });
 
+        // Audit log para cambios de estado (aprobación / restauración)
+        if (body.status === 'ACTIVE') {
+            try {
+                await (prisma.auditLog as any).create({
+                    data: {
+                        userId: auth.userId,
+                        companyId,
+                        action: body.status === 'ACTIVE' ? 'TRANSACTION_UPDATED' : 'TRANSACTION_UPDATED',
+                        resource: 'Transaction',
+                        resourceId: id,
+                        ipAddress: request.headers.get('x-forwarded-for') || '127.0.0.1',
+                        userAgent: request.headers.get('user-agent') || 'Unknown',
+                        newData: { status: 'ACTIVE', previousStatus: body._prevStatus ?? 'UNKNOWN' },
+                        result: 'SUCCESS',
+                        metadata: { action: 'STATUS_CHANGE' },
+                    },
+                });
+            } catch (auditErr) {
+                console.warn('Audit log warning (patch):', auditErr);
+            }
+        }
+
         return NextResponse.json({ transaction });
     } catch (error) {
         return apiError('Error al actualizar transacción', 500, error);
