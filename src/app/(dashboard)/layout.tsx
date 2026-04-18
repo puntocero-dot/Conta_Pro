@@ -21,7 +21,7 @@ import styles from './layout.module.css';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { user, role, logout } = useAuth();
-    const { theme, toggleTheme } = useTheme();
+    useTheme();
     const router = useRouter();
     const pathname = usePathname();
     const { companies, isLoading: companyLoading } = useCompany();
@@ -208,11 +208,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                 <button className={styles.popoverItem}>
                                     <PencilIcon size={16} />
                                     <span>Cambiar Contraseña</span>
-                                </button>
-                                <button className={styles.popoverItem} onClick={() => {
-                                    toggleTheme();
-                                }}>
-                                    {theme.mode === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Oscuro'}
                                 </button>
                             </div>
                             <button onClick={handleLogout} className={styles.popoverLogout}>

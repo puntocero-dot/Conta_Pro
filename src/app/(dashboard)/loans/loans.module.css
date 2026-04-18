@@ -27,8 +27,8 @@
 .loanDesc { font-size: 0.8125rem; color: var(--muted); margin: 0; }
 
 .statusBadge { padding: 0.25rem 0.625rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
-.active { background: #f0fdf4; color: #059669; }
-.closedBadge { background: #f3f4f6; color: #6b7280; }
+.active { background: rgba(16, 185, 129, 0.08); color: #059669; }
+.closedBadge { background: rgba(255, 255, 255, 0.04); color: #6b7280; }
 
 .loanAmounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
 .amtLabel { display: block; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-bottom: 0.125rem; }
@@ -44,7 +44,7 @@
 .loanActions { display: flex; gap: 0.75rem; }
 
 .cuotaPreview {
-    background: #eff6ff;
+    background: rgba(59, 130, 246, 0.08);
     border: 1px solid #bfdbfe;
     border-radius: var(--radius);
     padding: 0.75rem 1rem;
@@ -54,7 +54,7 @@
 }
 
 .paymentHint {
-    background: #f8fafc;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 0.75rem;
@@ -66,11 +66,11 @@
 .amortSummary { font-size: 0.875rem; color: var(--muted); margin-bottom: 1rem; }
 .amortTable { overflow-x: auto; max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
 .amortTable table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-.amortTable th { background: #f8fafc; padding: 0.5rem 0.75rem; text-align: right; font-weight: 600; color: var(--muted); font-size: 0.6875rem; text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+.amortTable th { background: rgba(255, 255, 255, 0.03); padding: 0.5rem 0.75rem; text-align: right; font-weight: 600; color: var(--muted); font-size: 0.6875rem; text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
 .amortTable th:first-child { text-align: center; }
-.amortTable td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: right; }
+.amortTable td { padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); text-align: right; }
 .amortTable td:first-child { text-align: center; color: var(--muted); font-weight: 600; }
-.lastRow td { font-weight: 700; background: #f0fdf4; }
+.lastRow td { font-weight: 700; background: rgba(16, 185, 129, 0.08); }
 
 @media (max-width: 768px) {
     .statsGrid, .loanAmounts { grid-template-columns: 1fr 1fr; }

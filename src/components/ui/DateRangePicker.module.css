@@ -7,20 +7,25 @@
 .presetSelect {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: #374151;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     padding: 0.375rem 0.625rem;
     cursor: pointer;
     outline: none;
-    transition: border-color 0.15s;
+    transition: all var(--transition-fast);
     max-width: 160px;
 }
 
 .presetSelect:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--ring);
+}
+
+.presetSelect option {
+    background: #0c1220;
+    color: #f8fafc;
 }
 
 .dates {
@@ -32,14 +37,15 @@
 .dateInput {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: #374151;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     padding: 0.375rem 0.5rem;
     outline: none;
-    transition: border-color 0.15s;
+    transition: all var(--transition-fast);
     width: 130px;
+    color-scheme: dark;
 }
 
 .dateInput:focus {
@@ -49,23 +55,15 @@
 
 .separator {
     font-size: 0.875rem;
-    color: #9ca3af;
+    color: #475569;
     flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
-    .presetSelect {
-        display: none;
-    }
-
-    .dateInput {
-        width: 110px;
-        font-size: 0.75rem;
-    }
+    .presetSelect { display: none; }
+    .dateInput { width: 110px; font-size: 0.75rem; }
 }
 
 @media (max-width: 500px) {
-    .dates {
-        display: none;
-    }
+    .dates { display: none; }
 }

@@ -13,7 +13,7 @@
 
 .label {
     font-size: 0.8125rem;
-    color: #374151;
+    color: #94a3b8;
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -21,8 +21,8 @@
 }
 
 .barTrack {
-    height: 8px;
-    background: #f3f4f6;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 99px;
     overflow: hidden;
 }
@@ -37,13 +37,13 @@
 .value {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: #111827;
+    color: #e2e8f0;
     text-align: right;
 }
 
 .empty {
     font-size: 0.875rem;
-    color: #9ca3af;
+    color: #475569;
     text-align: center;
     padding: 1.5rem 0;
 }

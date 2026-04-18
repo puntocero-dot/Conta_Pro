@@ -138,12 +138,12 @@
     border-radius: 1rem;
     font-size: 1rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: #f8fafc;
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .input:focus {
     border-color: var(--primary);
-    background: white;
+    background: rgba(255, 255, 255, 0.03);
     box-shadow: 0 0 0 4px rgba(0, 119, 182, 0.15);
 }
 

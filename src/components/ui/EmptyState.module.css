@@ -11,7 +11,8 @@
 .iconWrapper {
     width: 4rem;
     height: 4rem;
-    background: #f1f5f9;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.15);
     border-radius: 1rem;
     display: flex;
     align-items: center;
@@ -20,14 +21,14 @@
 }
 
 .title {
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #f1f5f9;
     margin: 0;
 }
 
 .description {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     color: #64748b;
     margin: 0;
     max-width: 340px;
@@ -37,16 +38,19 @@
 .action {
     margin-top: 0.5rem;
     padding: 0.625rem 1.25rem;
-    background: #2563eb;
-    color: #fff;
+    background: var(--primary);
+    color: white;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: var(--radius);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: all var(--transition);
+    box-shadow: 0 2px 12px rgba(59, 130, 246, 0.3);
 }
 
 .action:hover {
-    background: #1d4ed8;
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
 }

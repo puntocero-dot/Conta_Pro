@@ -14,7 +14,7 @@
 .periodSelector {
     display: flex;
     gap: 1rem;
-    background: white;
+    background: rgba(255, 255, 255, 0.03);
     padding: 1rem 1.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -40,10 +40,10 @@
     padding: 0.5rem 2rem 0.5rem 1rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    background-color: #f8fafc;
+    background-color: rgba(255, 255, 255, 0.03);
     font-size: 0.875rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #f1f5f9;
     cursor: pointer;
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
@@ -60,7 +60,7 @@
 }
 
 .summaryCard {
-    background: white;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 1.5rem;
@@ -72,13 +72,13 @@
 
 .summaryCard:hover {
     box-shadow: var(--shadow);
-    border-color: #cbd5e1;
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .cardIcon {
     width: 56px;
     height: 56px;
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -99,31 +99,31 @@
     font-size: 1.25rem;
     font-weight: 800;
     margin: 0;
-    color: #0f172a;
+    color: #f8fafc;
 }
 
 .income .cardIcon {
-    background: #f0fdf4;
+    background: rgba(16, 185, 129, 0.08);
     color: #16a34a;
 }
 
 .expense .cardIcon {
-    background: #fef2f2;
+    background: rgba(239, 68, 68, 0.08);
     color: #dc2626;
 }
 
 .balance .cardIcon {
-    background: #eff6ff;
+    background: rgba(59, 130, 246, 0.08);
     color: #2563eb;
 }
 
 .tax .cardIcon {
-    background: #f5f3ff;
+    background: rgba(99, 102, 241, 0.08);
     color: #7c3aed;
 }
 
 .section {
-    background: white;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 1.5rem;
@@ -160,7 +160,7 @@
 .categoryName {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #f1f5f9;
 }
 
 .categoryAmount {
@@ -171,7 +171,7 @@
 .progressBar {
     flex: 1;
     height: 8px;
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -211,7 +211,7 @@
 .statItem strong {
     font-size: 1.125rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #f1f5f9;
 }
 
 .loading {
@@ -254,8 +254,8 @@
 }
 
 .kpiCard {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 1.25rem 1.5rem;
     position: relative;
@@ -273,7 +273,7 @@
 .kpiValue {
     font-size: 1.375rem;
     font-weight: 700;
-    color: #111827;
+    color: #f8fafc;
     letter-spacing: -0.02em;
     margin-bottom: 0.25rem;
 }
@@ -332,7 +332,7 @@
 .sectionTitle {
     font-size: 0.875rem;
     font-weight: 700;
-    color: #374151;
+    color: #cbd5e1;
     margin: 0 0 1rem 0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -360,12 +360,12 @@
 .taxRow strong {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #111827;
+    color: #f8fafc;
 }
 
 .taxDivider {
     height: 1px;
-    background: #f3f4f6;
+    background: rgba(255, 255, 255, 0.04);
     margin: 0.25rem 0;
 }
 

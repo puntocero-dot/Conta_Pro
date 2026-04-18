@@ -6,7 +6,7 @@
   padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
   cursor: pointer; border: 1px solid var(--border, rgba(0,0,0,0.1));
 }
-.tab { background: #fff; color: var(--muted, #64748b); }
+.tab { background: rgba(255, 255, 255, 0.03); color: var(--muted, #64748b); }
 .tabActive { background: var(--primary, #2563eb); color: #fff; border-color: transparent; }
 
 .equationBadge {
@@ -20,18 +20,18 @@
 @media (max-width: 900px) { .statementGrid { grid-template-columns: 1fr; } }
 
 .statementSection {
-  background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08));
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border, rgba(0,0,0,0.08));
   border-radius: 12px; overflow: hidden;
 }
 .statementSection h3 {
   margin: 0; padding: 1rem; font-size: 0.75rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.1em; background: #f8fafc;
+  text-transform: uppercase; letter-spacing: 0.1em; background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid var(--border, rgba(0,0,0,0.08));
   color: var(--muted, #64748b);
 }
 
 .singleStatement {
-  background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08));
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border, rgba(0,0,0,0.08));
   border-radius: 12px; overflow: hidden; max-width: 720px;
 }
 
@@ -40,7 +40,7 @@
 .stmtTable tr:last-child td { border-bottom: none; }
 .stmtTable .amount { text-align: right; font-variant-numeric: tabular-nums; min-width: 120px; }
 
-.bold td { font-weight: 700; background: #f8fafc; }
+.bold td { font-weight: 700; background: rgba(255, 255, 255, 0.03); }
 .income td { color: #16a34a; }
 .expense td { color: #dc2626; }
 
@@ -48,7 +48,7 @@
 .separator hr { border: none; border-top: 1px solid var(--border, rgba(0,0,0,0.08)); margin: 0; }
 
 .btnPrint {
-  padding: 0.5rem 1rem; background: #fff; color: var(--primary, #2563eb);
+  padding: 0.5rem 1rem; background: rgba(255, 255, 255, 0.03); color: var(--primary, #2563eb);
   border: 1px solid var(--primary, #2563eb); border-radius: 8px;
   font-size: 0.875rem; font-weight: 500; cursor: pointer;
 }

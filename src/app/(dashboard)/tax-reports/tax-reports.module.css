@@ -4,7 +4,7 @@
 .periodSelector { display: flex; gap: 0.5rem; }
 .periodSelector select {
   padding: 0.4rem 0.75rem; border: 1px solid var(--border, rgba(0,0,0,0.1));
-  border-radius: 8px; font-size: 0.875rem; background: #fff; cursor: pointer;
+  border-radius: 8px; font-size: 0.875rem; background: rgba(255, 255, 255, 0.03); cursor: pointer;
 }
 
 .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
@@ -13,7 +13,7 @@
   cursor: pointer; border: 1px solid var(--border, rgba(0,0,0,0.1));
   display: flex; align-items: center; gap: 0.5rem;
 }
-.tab { background: #fff; color: var(--muted, #64748b); }
+.tab { background: rgba(255, 255, 255, 0.03); color: var(--muted, #64748b); }
 .tabActive { background: var(--primary, #2563eb); color: #fff; border-color: transparent; }
 .formBadge {
   font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
@@ -33,7 +33,7 @@
 @media (max-width: 700px) { .reportGrid { grid-template-columns: 1fr; } }
 
 .reportCard {
-  background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08));
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border, rgba(0,0,0,0.08));
   border-radius: 12px; padding: 1.25rem;
 }
 .reportCard h4 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted, #64748b); margin: 0 0 1rem; }
@@ -53,8 +53,8 @@
   border-radius: 12px; padding: 1.5rem;
   border: 1px solid var(--border, rgba(0,0,0,0.08));
 }
-.summaryCard.toPay    { background: #fff7ed; border-color: #fed7aa; }
-.summaryCard.toReturn { background: #f0fdf4; border-color: #bbf7d0; }
+.summaryCard.toPay    { background: rgba(245, 158, 11, 0.08); border-color: #fed7aa; }
+.summaryCard.toReturn { background: rgba(16, 185, 129, 0.08); border-color: #bbf7d0; }
 .summaryRow { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.9rem; }
 .summaryDivider { border-top: 2px solid var(--border, rgba(0,0,0,0.1)); margin: 0.75rem 0; }
 .bigAmount { font-size: 1.5rem; font-weight: 800; }

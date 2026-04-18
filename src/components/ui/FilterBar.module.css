@@ -8,9 +8,9 @@
 .pill {
     padding: 0.375rem 0.875rem;
     border-radius: 99px;
-    border: 1px solid var(--border);
-    background: white;
-    color: var(--muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
@@ -20,9 +20,9 @@
 }
 
 .pill:hover {
-    border-color: var(--border-hover);
-    color: var(--foreground);
-    background: #f9fafb;
+    border-color: rgba(255, 255, 255, 0.18);
+    color: white;
+    background: rgba(255, 255, 255, 0.07);
 }
 
 .pill.active {
@@ -30,4 +30,5 @@
     border-color: var(--primary);
     color: white;
     font-weight: 600;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
 }

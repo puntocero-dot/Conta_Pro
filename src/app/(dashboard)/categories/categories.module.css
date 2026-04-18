@@ -3,7 +3,7 @@
 .empty { color: var(--muted, #64748b); padding: 1rem; text-align: center; }
 
 .infoBox {
-  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+  background: rgba(59, 130, 246, 0.08); border: 1px solid #bfdbfe; border-radius: 10px;
   padding: 0.875rem 1rem; font-size: 0.875rem; color: #1e40af;
   margin-bottom: 1.5rem; line-height: 1.5;
 }
@@ -13,13 +13,13 @@
   padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500;
   cursor: pointer; border: 1px solid var(--border, rgba(0,0,0,0.1));
 }
-.tab { background: #fff; color: var(--muted, #64748b); }
+.tab { background: rgba(255, 255, 255, 0.03); color: var(--muted, #64748b); }
 .tabActive { background: var(--primary, #2563eb); color: #fff; border-color: transparent; }
 
 .grid { display: flex; flex-direction: column; gap: 0.75rem; }
 
 .card {
-  background: #fff; border: 1px solid var(--border, rgba(0,0,0,0.08));
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border, rgba(0,0,0,0.08));
   border-radius: 12px; overflow: hidden; transition: border-color 0.15s;
 }
 .card.editing { border-color: var(--primary, #2563eb); }
@@ -41,7 +41,7 @@
 .noMapping { font-size: 0.75rem; color: #f59e0b; }
 
 .editBtn {
-  padding: 0.35rem 0.75rem; background: #f1f5f9; border: 1px solid var(--border, rgba(0,0,0,0.1));
+  padding: 0.35rem 0.75rem; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border, rgba(0,0,0,0.1));
   border-radius: 6px; font-size: 0.75rem; font-weight: 500; cursor: pointer;
   color: var(--primary, #2563eb); flex-shrink: 0;
 }
@@ -51,7 +51,7 @@
 .editActions { display: flex; gap: 0.75rem; justify-content: flex-end; }
 
 .accountSection {
-  background: #f8fafc; border: 1px solid var(--border, rgba(0,0,0,0.06));
+  background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border, rgba(0,0,0,0.06));
   border-radius: 8px; padding: 1rem;
 }
 .accountSection h4 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted, #64748b); margin: 0 0 0.75rem; }
@@ -60,7 +60,7 @@
 .field label { font-size: 0.75rem; font-weight: 500; color: var(--foreground, #0f172a); }
 .field input, .field select {
   padding: 0.45rem 0.7rem; border: 1px solid var(--border, rgba(0,0,0,0.12));
-  border-radius: 7px; font-size: 0.875rem; background: #fff; outline: none;
+  border-radius: 7px; font-size: 0.875rem; background: rgba(255, 255, 255, 0.03); outline: none;
 }
 .field input:focus, .field select:focus { border-color: var(--primary, #2563eb); }
 
@@ -79,12 +79,12 @@
 .btnPrimary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btnSecondary {
-  padding: 0.5rem 1rem; background: #f1f5f9;
+  padding: 0.5rem 1rem; background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border, rgba(0,0,0,0.1)); border-radius: 8px;
   font-size: 0.875rem; font-weight: 500; cursor: pointer;
 }
 
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-.modal { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+.modal { background: rgba(255, 255, 255, 0.03); border-radius: 16px; padding: 2rem; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
 .modal h3 { font-size: 1.1rem; font-weight: 600; margin: 0 0 1.5rem; }
 .modalActions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }

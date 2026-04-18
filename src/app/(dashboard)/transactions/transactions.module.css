@@ -10,7 +10,7 @@
 }
 
 .statCard {
-  background: white;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
@@ -22,13 +22,13 @@
 
 .statCard:hover {
   box-shadow: var(--shadow);
-  border-color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .statIcon {
   width: 56px;
   height: 56px;
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -52,27 +52,27 @@
 .statValue {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #f8fafc;
   margin: 0;
 }
 
 .income .statIcon {
-  background: #f0fdf4;
+  background: rgba(16, 185, 129, 0.08);
   color: #16a34a;
 }
 
 .expense .statIcon {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.08);
   color: #dc2626;
 }
 
 .positive .statIcon {
-  background: #eff6ff;
+  background: rgba(59, 130, 246, 0.08);
   color: #2563eb;
 }
 
 .negative .statIcon {
-  background: #fffbeb;
+  background: rgba(245, 158, 11, 0.08);
   color: #d97706;
 }
 
@@ -84,7 +84,7 @@
 
 .filterBtn {
   padding: 0.625rem 1.25rem;
-  background: white;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-size: 0.875rem;
@@ -95,22 +95,22 @@
 }
 
 .filterBtn:hover {
-  background: #f8fafc;
-  color: #1e293b;
+  background: rgba(255, 255, 255, 0.03);
+  color: #f1f5f9;
 }
 
 .filterActive {
   padding: 0.625rem 1.25rem;
   background: #1e293b;
   color: white;
-  border-color: #1e293b;
+  border-color: #f1f5f9;
   border-radius: var(--radius);
   font-size: 0.875rem;
   font-weight: 600;
 }
 
 .transactionsList {
-  background: white;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -121,7 +121,7 @@
   align-items: center;
   gap: 1.25rem;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: background 0.2s;
 }
 
@@ -130,7 +130,7 @@
 }
 
 .transactionCard:hover {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .transactionIcon {
@@ -151,7 +151,7 @@
   margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #f1f5f9;
 }
 
 .transactionCategory {
@@ -188,7 +188,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.125rem 0.5rem;
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.08);
   color: #dc2626;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -201,7 +201,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.125rem 0.5rem;
-  background: #eff6ff;
+  background: rgba(59, 130, 246, 0.08);
   color: #2563eb;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -226,7 +226,7 @@
 }
 
 .modal {
-  background: white;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-lg);
   width: 500px;
   max-width: 95vw;
@@ -262,7 +262,7 @@
 
 .typeButtons button {
   padding: 0.75rem;
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font-weight: 600;
@@ -274,7 +274,7 @@
 .typeButtons button.typeActive {
   background: #1e293b;
   color: white;
-  border-color: #1e293b;
+  border-color: #f1f5f9;
 }
 
 .loading {

@@ -1,12 +1,13 @@
 .card {
-    background: white;
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
     padding: 2rem;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: var(--shadow);
     margin-bottom: 1.5rem;
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(12px);
 }
 
 .card::before {
@@ -15,16 +16,18 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    border-radius: 16px 16px 0 0;
+    height: 2px;
+    border-radius: 20px 20px 0 0;
 }
 
 .card.positive::before {
     background: linear-gradient(90deg, #10b981, #34d399);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
 }
 
 .card.negative::before {
     background: linear-gradient(90deg, #ef4444, #f87171);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
 }
 
 .topRow {
@@ -37,29 +40,24 @@
 }
 
 .label {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.6875rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #6b7280;
+    letter-spacing: 0.1em;
+    color: #64748b;
     margin-bottom: 0.5rem;
 }
 
 .amount {
     font-size: 2.25rem;
     font-weight: 700;
-    color: #111827;
+    color: #f8fafc;
     letter-spacing: -0.03em;
     line-height: 1;
 }
 
-.positive .amount {
-    color: #065f46;
-}
-
-.negative .amount {
-    color: #991b1b;
-}
+.positive .amount { color: #34d399; }
+.negative .amount  { color: #f87171; }
 
 .meta {
     display: flex;
@@ -72,28 +70,21 @@
     font-size: 0.8125rem;
     font-weight: 600;
     padding: 0.25rem 0.625rem;
-    border-radius: 20px;
+    border-radius: 99px;
 }
 
-.delta.up {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.delta.down {
-    background: #fee2e2;
-    color: #991b1b;
-}
+.delta.up   { background: rgba(16,185,129,0.12);  color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+.delta.down { background: rgba(239,68,68,0.12);   color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
 
 .margin {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: #475569;
     font-weight: 500;
 }
 
 .bar {
-    height: 8px;
-    background: #fee2e2;
+    height: 6px;
+    background: rgba(239, 68, 68, 0.15);
     border-radius: 99px;
     overflow: hidden;
     margin-bottom: 1rem;
@@ -101,9 +92,10 @@
 
 .barInner {
     height: 100%;
-    background: #10b981;
+    background: linear-gradient(90deg, #10b981, #34d399);
     border-radius: 99px;
     transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
 }
 
 .breakdown {
@@ -119,20 +111,20 @@
 }
 
 .dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
 .breakdownLabel {
     font-size: 0.8125rem;
-    color: #6b7280;
+    color: #64748b;
     font-weight: 500;
 }
 
 .breakdownAmount {
     font-size: 0.875rem;
     font-weight: 700;
-    color: #111827;
+    color: #e2e8f0;
 }
