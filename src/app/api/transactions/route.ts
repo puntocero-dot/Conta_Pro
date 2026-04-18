@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const startDateParam = searchParams.get('startDate');
         const endDateParam = searchParams.get('endDate');
+        const statusParam = searchParams.get('status'); // 'ANNULLED' para ver solo anuladas
         const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
         const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '100')));
 
@@ -37,17 +38,26 @@ export async function GET(request: NextRequest) {
             lte: new Date(endDateParam + 'T23:59:59.999Z'),
         } : undefined;
 
+        // Por defecto excluir anuladas; si piden ?status=ANNULLED mostrar solo anuladas
+        const statusFilter = statusParam === 'ANNULLED'
+            ? { status: 'ANNULLED' as const }
+            : { status: { not: 'ANNULLED' as const } };
+
+        const whereClause = {
+            companyId,
+            ...(dateFilter ? { date: dateFilter } : {}),
+            ...statusFilter,
+        };
+
         const [transactions, total] = await Promise.all([
             prisma.transaction.findMany({
-                where: { companyId, ...(dateFilter ? { date: dateFilter } : {}) },
+                where: whereClause,
                 include: { category: true },
                 orderBy: { date: 'desc' },
                 take: limit,
                 skip: (page - 1) * limit,
             }),
-            prisma.transaction.count({
-                where: { companyId, ...(dateFilter ? { date: dateFilter } : {}) },
-            }),
+            prisma.transaction.count({ where: whereClause }),
         ]);
 
         return NextResponse.json({ transactions, total, page, limit });

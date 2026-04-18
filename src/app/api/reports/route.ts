@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { TransactionStatus } from '@prisma/client';
 import { getAuthFromRequest, getCompanyIdFromRequest } from '@/lib/auth/jwt';
 import { apiError } from '@/lib/api/error-response';
 
@@ -43,18 +44,20 @@ export async function GET(request: NextRequest) {
         const prevEndDate = new Date(startDate.getTime() - 1);
         const prevStartDate = new Date(prevEndDate.getTime() - durationMs);
 
+        const ACTIVE_STATUSES = { notIn: [TransactionStatus.ANNULLED] };
+
         const [transactions, prevTransactions] = await Promise.all([
             prisma.transaction.findMany({
-                where: { companyId, date: { gte: startDate, lte: endDate } },
+                where: { companyId, date: { gte: startDate, lte: endDate }, status: ACTIVE_STATUSES },
                 include: { category: true, client: true },
             }),
             prisma.transaction.findMany({
-                where: { companyId, date: { gte: prevStartDate, lte: prevEndDate } },
+                where: { companyId, date: { gte: prevStartDate, lte: prevEndDate }, status: ACTIVE_STATUSES },
                 select: { type: true, amount: true },
             }),
         ]);
 
-        // Totales periodo actual
+        // Totales periodo actual (solo transacciones no anuladas)
         const totalIngresos = transactions.filter(t => t.type === 'INGRESO').reduce((s, t) => s + t.amount, 0);
         const totalEgresos = transactions.filter(t => t.type === 'EGRESO').reduce((s, t) => s + t.amount, 0);
         const balance = totalIngresos - totalEgresos;

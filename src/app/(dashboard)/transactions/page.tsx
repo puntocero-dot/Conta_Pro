@@ -36,12 +36,14 @@ export default function TransactionsPage() {
     const { startDate, endDate } = useFilter();
     const { showToast } = useToast();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [annulledTransactions, setAnnulledTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewModal, setShowNewModal] = useState(false);
-    const [filter, setFilter] = useState<'ALL' | 'INGRESO' | 'EGRESO' | 'PENDING_APPROVAL'>('ALL');
+    const [filter, setFilter] = useState<'ALL' | 'INGRESO' | 'EGRESO' | 'PENDING_APPROVAL' | 'ANNULLED'>('ALL');
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [annullingId, setAnnullingId] = useState<string | null>(null);
     const [togglingPaid, setTogglingPaid] = useState<string | null>(null);
+    const [restoringId, setRestoringId] = useState<string | null>(null);
 
     const [bulkResult, setBulkResult] = useState<{ successCount: number; failedCount: number; failed: { row: number; reason: string; data: any }[] } | null>(null);
     const [showBulkDocs, setShowBulkDocs] = useState(false);
@@ -98,16 +100,18 @@ export default function TransactionsPage() {
         if (!activeCompanyId) return;
         setLoading(true);
         try {
-            const url = `/api/transactions?startDate=${startDate}&endDate=${endDate}&limit=200`;
-            const response = await fetch(url, {
-                headers: {
-                    'x-company-id': activeCompanyId,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            });
-            if (response.ok) {
-                const data = await response.json();
+            const headers = { 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' };
+            const [activeRes, annulledRes] = await Promise.all([
+                fetch(`/api/transactions?startDate=${startDate}&endDate=${endDate}&limit=200`, { headers }),
+                fetch(`/api/transactions?startDate=${startDate}&endDate=${endDate}&status=ANNULLED&limit=200`, { headers }),
+            ]);
+            if (activeRes.ok) {
+                const data = await activeRes.json();
                 setTransactions(data.transactions || []);
+            }
+            if (annulledRes.ok) {
+                const data = await annulledRes.json();
+                setAnnulledTransactions(data.transactions || []);
             }
         } catch (error) {
             console.error('Error fetching transactions:', error);
@@ -121,15 +125,44 @@ export default function TransactionsPage() {
             fetchTransactions();
         } else {
             setTransactions([]);
+            setAnnulledTransactions([]);
             setLoading(false);
         }
     }, [activeCompanyId, startDate, endDate, fetchTransactions]);
 
-    const filteredTransactions = transactions.filter(t => {
-        if (filter === 'ALL') return true;
-        if (filter === 'PENDING_APPROVAL') return t.status === 'PENDING_APPROVAL';
-        return (t.type as string) === filter;
-    });
+    const filteredTransactions = filter === 'ANNULLED'
+        ? annulledTransactions
+        : transactions.filter(t => {
+            if (filter === 'ALL') return true;
+            if (filter === 'PENDING_APPROVAL') return t.status === 'PENDING_APPROVAL';
+            return (t.type as string) === filter;
+        });
+
+    const handleRestore = async (transactionId: string) => {
+        if (!activeCompanyId) return;
+        setRestoringId(transactionId);
+        try {
+            const res = await fetch(`/api/transactions/${transactionId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-company-id': activeCompanyId,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ status: 'ACTIVE' }),
+            });
+            if (res.ok) {
+                showToast('Transacción restaurada correctamente ✓', 'success');
+                fetchTransactions();
+            } else {
+                showToast('Error al restaurar la transacción', 'error');
+            }
+        } catch {
+            showToast('Error de conexión', 'error');
+        } finally {
+            setRestoringId(null);
+        }
+    };
 
     const handleTogglePaid = async (tx: Transaction) => {
         if (!activeCompanyId) return;
@@ -157,8 +190,8 @@ export default function TransactionsPage() {
         }
     };
 
-    const totalIngresos = transactions.filter(t => t.type === 'INGRESO' && t.status !== 'ANNULLED').reduce((s, t) => s + t.amount, 0);
-    const totalEgresos = transactions.filter(t => t.type === 'EGRESO' && t.status !== 'ANNULLED').reduce((s, t) => s + t.amount, 0);
+    const totalIngresos = transactions.filter(t => t.type === 'INGRESO').reduce((s, t) => s + t.amount, 0);
+    const totalEgresos = transactions.filter(t => t.type === 'EGRESO').reduce((s, t) => s + t.amount, 0);
     const pendingApprovalCount = transactions.filter(t => t.status === 'PENDING_APPROVAL').length;
     const balance = totalIngresos - totalEgresos;
 
@@ -178,7 +211,9 @@ export default function TransactionsPage() {
         <div className="animate-fade-in">
             <PageHeader
                 title="Transacciones"
-                subtitle={transactions.length > 0 ? `${transactions.length} operaciones en el período` : 'Historial financiero y control de caja'}
+                subtitle={filter === 'ANNULLED'
+                    ? `${annulledTransactions.length} transacciones anuladas`
+                    : transactions.length > 0 ? `${transactions.length} operaciones en el período` : 'Historial financiero y control de caja'}
             >
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <button className="btn btn-ghost" style={{ fontSize: '0.8125rem' }} onClick={() => setShowBulkDocs(v => !v)} title="Ver formato de columnas">
@@ -224,6 +259,7 @@ export default function TransactionsPage() {
                                 { value: 'INGRESO', label: 'Ingresos' },
                                 { value: 'EGRESO', label: 'Egresos' },
                                 { value: 'PENDING_APPROVAL', label: `Pendientes (${pendingApprovalCount})` },
+                                { value: 'ANNULLED', label: `Anuladas (${annulledTransactions.length})` },
                             ]}
                             value={filter}
                             onChange={(v) => setFilter(v as typeof filter)}
@@ -274,53 +310,65 @@ export default function TransactionsPage() {
                                         {transaction.type === 'INGRESO' ? '+' : '-'}{formatCurrency(transaction.amount ?? 0)}
                                     </div>
                                     <div className={styles.actionBtn}>
-                                        {transaction.status === 'PENDING_APPROVAL' && (
+                                        {/* Vista de anuladas: solo botón Recuperar */}
+                                        {filter === 'ANNULLED' ? (
                                             <button
-                                              onClick={async () => {
-                                                if (confirm('¿Deseas aprobar esta transacción registrada por el bot?')) {
-                                                  const res = await fetch(`/api/transactions/${transaction.id}`, {
-                                                    method: 'PATCH',
-                                                    headers: { 'Content-Type': 'application/json', 'x-company-id': activeCompanyId || '' },
-                                                    body: JSON.stringify({ status: 'ACTIVE' })
-                                                  });
-                                                  if (res.ok) { showToast('Transacción aprobada ✓', 'success'); fetchTransactions(); }
-                                                }
-                                              }}
-                                              className="btn btn-primary"
-                                              style={{ padding: '4px 12px', fontSize: 12 }}
-                                            >
-                                              Aprobar
-                                            </button>
-                                        )}
-                                        {/* isPaid toggle — solo si NO está anulada ni pendiente */}
-                                        {transaction.status !== 'ANNULLED' && transaction.status !== 'PENDING_APPROVAL' && (
-                                            <button
-                                                onClick={() => handleTogglePaid(transaction)}
+                                                onClick={() => handleRestore(transaction.id)}
                                                 className="btn btn-ghost"
-                                                title={transaction.isPaid ? 'Marcar como pendiente' : 'Marcar como cobrado/pagado'}
-                                                disabled={togglingPaid === transaction.id}
-                                                style={{ color: transaction.isPaid ? '#10b981' : '#f59e0b', fontSize: '1rem' }}
+                                                title="Restaurar transacción"
+                                                disabled={restoringId === transaction.id}
+                                                style={{ color: '#10b981', fontSize: '0.8125rem', fontWeight: 600 }}
                                             >
-                                                {transaction.isPaid ? '✓' : '○'}
+                                                {restoringId === transaction.id ? '...' : '↩ Recuperar'}
                                             </button>
+                                        ) : (
+                                            <>
+                                                {transaction.status === 'PENDING_APPROVAL' && (
+                                                    <button
+                                                      onClick={async () => {
+                                                        if (confirm('¿Deseas aprobar esta transacción registrada por el bot?')) {
+                                                          const res = await fetch(`/api/transactions/${transaction.id}`, {
+                                                            method: 'PATCH',
+                                                            headers: { 'Content-Type': 'application/json', 'x-company-id': activeCompanyId || '', 'X-Requested-With': 'XMLHttpRequest' },
+                                                            body: JSON.stringify({ status: 'ACTIVE' })
+                                                          });
+                                                          if (res.ok) { showToast('Transacción aprobada ✓', 'success'); fetchTransactions(); }
+                                                        }
+                                                      }}
+                                                      className="btn btn-primary"
+                                                      style={{ padding: '4px 12px', fontSize: 12 }}
+                                                    >
+                                                      Aprobar
+                                                    </button>
+                                                )}
+                                                {transaction.status !== 'PENDING_APPROVAL' && (
+                                                    <button
+                                                        onClick={() => handleTogglePaid(transaction)}
+                                                        className="btn btn-ghost"
+                                                        title={transaction.isPaid ? 'Marcar como pendiente' : 'Marcar como cobrado/pagado'}
+                                                        disabled={togglingPaid === transaction.id}
+                                                        style={{ color: transaction.isPaid ? '#10b981' : '#f59e0b', fontSize: '1rem' }}
+                                                    >
+                                                        {transaction.isPaid ? '✓' : '○'}
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => setEditingTransaction(transaction)}
+                                                    className="btn btn-ghost"
+                                                    title="Corregir/Editar"
+                                                >
+                                                    <PencilIcon size={15} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setAnnullingId(transaction.id)}
+                                                    className="btn btn-ghost"
+                                                    title="Anular"
+                                                    style={{ color: '#ef4444' }}
+                                                >
+                                                    <XIcon size={15} />
+                                                </button>
+                                            </>
                                         )}
-                                        <button
-                                            onClick={() => setEditingTransaction(transaction)}
-                                            className="btn btn-ghost"
-                                            title="Corregir/Editar"
-                                            disabled={transaction.status === 'ANNULLED'}
-                                        >
-                                            <PencilIcon size={15} />
-                                        </button>
-                                        <button
-                                            onClick={() => setAnnullingId(transaction.id)}
-                                            className="btn btn-ghost"
-                                            title="Anular"
-                                            style={{ color: '#ef4444' }}
-                                            disabled={transaction.status === 'ANNULLED'}
-                                        >
-                                            <XIcon size={15} />
-                                        </button>
                                     </div>
                                 </div>
                             ))

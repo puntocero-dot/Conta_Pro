@@ -98,11 +98,13 @@ export async function PATCH(
 
         const body = await request.json();
 
-        // Solo permite actualizar isPaid (y opcionalmente dueDate/creditDays)
         const data: any = {};
         if (body.isPaid !== undefined) data.isPaid = Boolean(body.isPaid);
         if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
         if (body.creditDays !== undefined) data.creditDays = body.creditDays ? parseInt(body.creditDays) : null;
+
+        // Allows: PENDING_APPROVAL → ACTIVE (bot approval) and ANNULLED → ACTIVE (restore)
+        if (body.status === 'ACTIVE') data.status = 'ACTIVE';
 
         const transaction = await (prisma.transaction as any).update({
             where: { id, companyId },
