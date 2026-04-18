@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/context/ToastContext';
+import { useCompany } from '@/context/CompanyContext';
 import { formatDate } from '@/lib/formatting';
 import { Modal } from '@/components/ui/Modal';
 
@@ -10,6 +11,7 @@ interface AppUser {
     email: string;
     role: string;
     createdAt: string;
+    companies?: { id: string; name: string }[];
     _count?: { companies: number };
 }
 
@@ -33,6 +35,7 @@ interface CompanyOption { id: string; name: string; }
 
 export default function SecurityUsersPage() {
     const { showToast } = useToast();
+    const { refreshCompanies } = useCompany();
     const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -129,7 +132,8 @@ export default function SecurityUsersPage() {
         if (res.ok) {
             showToast('Usuario asignado a la empresa', 'success');
             closeModal();
-            fetchUsers();
+            await fetchUsers();
+            await refreshCompanies();
         } else {
             const data = await res.json();
             showToast(data.error || 'Error al asignar empresa', 'error');
@@ -221,7 +225,33 @@ export default function SecurityUsersPage() {
                                         </span>
                                     </td>
                                     <td style={{ padding: '0.875rem 1rem', color: '#64748b' }}>
-                                        {user._count?.companies ?? '—'}
+                                        {user.companies && user.companies.length > 0 ? (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                                                {user.companies.map(c => (
+                                                    <span
+                                                        key={c.id}
+                                                        title={c.name}
+                                                        style={{
+                                                            display: 'inline-block',
+                                                            padding: '0.15rem 0.55rem',
+                                                            background: '#e0f2fe',
+                                                            color: '#0369a1',
+                                                            borderRadius: '100px',
+                                                            fontSize: '0.6875rem',
+                                                            fontWeight: 600,
+                                                            maxWidth: '160px',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        {c.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Sin asignar</span>
+                                        )}
                                     </td>
                                     <td style={{ padding: '0.875rem 1rem', color: '#94a3b8', fontSize: '0.8125rem' }}>
                                         {formatDate(user.createdAt)}

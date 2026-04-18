@@ -50,17 +50,19 @@ export async function POST(
         const targetUser = await prisma.user.findUnique({ where: { email } });
         if (!targetUser) return NextResponse.json({ error: 'Usuario no encontrado con ese email' }, { status: 404 });
 
-        const member = await (prisma as any).companyMember.upsert({
-            where: { userId_companyId: { userId: targetUser.id, companyId: id } },
-            update: { role: role || 'CLIENTE' },
-            create: { userId: targetUser.id, companyId: id, role: role || 'CLIENTE' },
-            include: { user: { select: { id: true, email: true, role: true } } },
-        });
-
-        // Also link via M2M for backwards compatibility
-        await prisma.company.update({
-            where: { id },
-            data: { users: { connect: { id: targetUser.id } } },
+        const member = await prisma.$transaction(async (tx) => {
+            const m = await (tx as any).companyMember.upsert({
+                where: { userId_companyId: { userId: targetUser.id, companyId: id } },
+                update: { role: role || 'CLIENTE' },
+                create: { userId: targetUser.id, companyId: id, role: role || 'CLIENTE' },
+                include: { user: { select: { id: true, email: true, role: true } } },
+            });
+            // Link M2M Company<->User so que la lista del usuario refleje la empresa
+            await tx.company.update({
+                where: { id },
+                data: { users: { connect: { id: targetUser.id } } },
+            });
+            return m;
         });
 
         return NextResponse.json({ member }, { status: 201 });

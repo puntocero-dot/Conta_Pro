@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './fixed-assets.module.css';
 
 const ACCOUNT_LABELS: Record<string, string> = {
@@ -19,6 +20,7 @@ const fmt = (n: number) =>
 const fmtPct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
 export default function FixedAssetsPage() {
+  const { activeCompanyId } = useCompany();
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -39,20 +41,28 @@ export default function FixedAssetsPage() {
   };
 
   const loadAssets = useCallback(async () => {
+    if (!activeCompanyId) {
+      setAssets([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const res = await fetch('/api/fixed-assets?status=ALL');
+    const res = await fetch('/api/fixed-assets?status=ALL', {
+      headers: { 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' },
+    });
     const data = await res.json();
     setAssets(data.assets ?? []);
     setLoading(false);
-  }, []);
+  }, [activeCompanyId]);
 
   useEffect(() => { loadAssets(); }, [loadAssets]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!activeCompanyId) return;
     const res = await fetch('/api/fixed-assets', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' },
       body: JSON.stringify({
         ...form,
         purchaseCost: parseFloat(form.purchaseCost),
@@ -71,8 +81,12 @@ export default function FixedAssetsPage() {
   };
 
   const handleDepreciate = async (assetId: string) => {
+    if (!activeCompanyId) return;
     setDepreciating(assetId);
-    const res = await fetch(`/api/fixed-assets/${assetId}/depreciate`, { method: 'POST' });
+    const res = await fetch(`/api/fixed-assets/${assetId}/depreciate`, {
+      method: 'POST',
+      headers: { 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' },
+    });
     const data = await res.json();
     if (res.ok) {
       showToast(`Depreciación registrada: ${fmt(data.depreciation.amount)}`);

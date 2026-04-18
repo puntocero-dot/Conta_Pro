@@ -21,12 +21,32 @@ export async function GET(request: NextRequest) {
                 email: true,
                 role: true,
                 createdAt: true,
-                _count: { select: { companies: true } },
+                companies: { select: { id: true, name: true } },
+                companyMembers: {
+                    select: {
+                        company: { select: { id: true, name: true } },
+                    },
+                },
             },
             orderBy: { createdAt: 'desc' },
         });
 
-        return NextResponse.json({ users });
+        // Unir ambas fuentes (M2M y CompanyMember) para reflejar fielmente las
+        // empresas a las que está asignado cada usuario.
+        const usersWithCompanies = users.map(u => {
+            const byId = new Map<string, { id: string; name: string }>();
+            for (const c of u.companies) byId.set(c.id, c);
+            for (const m of u.companyMembers) byId.set(m.company.id, m.company);
+            const companies = Array.from(byId.values());
+            const { companyMembers, ...rest } = u;
+            return {
+                ...rest,
+                companies,
+                _count: { companies: companies.length },
+            };
+        });
+
+        return NextResponse.json({ users: usersWithCompanies });
     } catch (error) {
         return apiError('Error al obtener usuarios', 500, error);
     }

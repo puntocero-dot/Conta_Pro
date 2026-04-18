@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './receivables.module.css';
 
 const fmt = (n: number) =>
@@ -66,22 +67,30 @@ function AgingTable({ data, totals, nameField }: { data: any; totals: any; nameF
 }
 
 export default function ReceivablesPage() {
+  const { activeCompanyId } = useCompany();
   const [tab, setTab] = useState<'cobrar' | 'pagar'>('cobrar');
   const [cxcData, setCxcData] = useState<any>(null);
   const [cxpData, setCxpData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!activeCompanyId) {
+      setCxcData(null);
+      setCxpData(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    const headers = { 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' };
     Promise.all([
-      fetch('/api/receivables').then(r => r.json()),
-      fetch('/api/payables').then(r => r.json()),
+      fetch('/api/receivables', { headers }).then(r => r.json()),
+      fetch('/api/payables', { headers }).then(r => r.json()),
     ]).then(([cxc, cxp]) => {
       setCxcData(cxc);
       setCxpData(cxp);
       setLoading(false);
     });
-  }, []);
+  }, [activeCompanyId]);
 
   return (
     <div className={styles.page}>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './tax-reports.module.css';
 
 const fmt = (n: number) =>
@@ -17,6 +18,7 @@ const MONTHS = [
 type Tab = 'iva' | 'pago-a-cuenta' | 'isr';
 
 export default function TaxReportsPage() {
+  const { activeCompanyId } = useCompany();
   const [tab, setTab] = useState<Tab>('iva');
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -26,17 +28,23 @@ export default function TaxReportsPage() {
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
+    if (!activeCompanyId) {
+      setIvaData(null); setPacData(null); setIsrData(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    const headers = { 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' };
     const [iva, pac, isr] = await Promise.all([
-      fetch(`/api/tax-reports/iva?month=${month}&year=${year}`).then(r => r.json()),
-      fetch(`/api/tax-reports/pago-a-cuenta?month=${month}&year=${year}`).then(r => r.json()),
-      fetch(`/api/tax-reports/isr?year=${year}`).then(r => r.json()),
+      fetch(`/api/tax-reports/iva?month=${month}&year=${year}`, { headers }).then(r => r.json()),
+      fetch(`/api/tax-reports/pago-a-cuenta?month=${month}&year=${year}`, { headers }).then(r => r.json()),
+      fetch(`/api/tax-reports/isr?year=${year}`, { headers }).then(r => r.json()),
     ]);
     setIvaData(iva);
     setPacData(pac);
     setIsrData(isr);
     setLoading(false);
-  }, [month, year]);
+  }, [month, year, activeCompanyId]);
 
   useEffect(() => { load(); }, [load]);
 

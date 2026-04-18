@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useFilter } from '@/context/FilterContext';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './financial-metrics.module.css';
 
 const fmt = (n: number) =>
@@ -41,16 +42,24 @@ function ratingMargin(v: number): 'good' | 'warn' | 'bad' {
 
 export default function FinancialMetricsPage() {
   const { startDate, endDate } = useFilter();
+  const { activeCompanyId } = useCompany();
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!activeCompanyId) {
+      setMetrics(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const res = await fetch(`/api/financial-metrics?startDate=${startDate}&endDate=${endDate}`);
+    const res = await fetch(`/api/financial-metrics?startDate=${startDate}&endDate=${endDate}`, {
+      headers: { 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' },
+    });
     const data = await res.json();
     setMetrics(data.metrics);
     setLoading(false);
-  }, [startDate, endDate]);
+  }, [startDate, endDate, activeCompanyId]);
 
   useEffect(() => { load(); }, [load]);
 

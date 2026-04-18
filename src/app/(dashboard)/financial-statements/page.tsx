@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useFilter } from '@/context/FilterContext';
+import { useCompany } from '@/context/CompanyContext';
 import styles from './financial-statements.module.css';
 
 const fmt = (n: number) =>
@@ -194,6 +195,7 @@ function EquityTab({ data }: { data: any }) {
 
 export default function FinancialStatementsPage() {
   const { startDate, endDate } = useFilter();
+  const { activeCompanyId } = useCompany();
   const [tab, setTab] = useState<Tab>('balance');
   const [balance, setBalance] = useState<any>(null);
   const [income, setIncome] = useState<any>(null);
@@ -202,15 +204,21 @@ export default function FinancialStatementsPage() {
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
+    if (!activeCompanyId) {
+      setBalance(null); setIncome(null); setCashflow(null); setEquity(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const params = `startDate=${startDate}&endDate=${endDate}`;
     const year = new Date(endDate).getFullYear();
+    const headers = { 'x-company-id': activeCompanyId, 'X-Requested-With': 'XMLHttpRequest' };
 
     const [bs, is, cf, eq] = await Promise.all([
-      fetch(`/api/financial-statements/balance-sheet?date=${endDate}`).then(r => r.json()),
-      fetch(`/api/financial-statements/income-statement?${params}`).then(r => r.json()),
-      fetch(`/api/financial-statements/cash-flow?${params}`).then(r => r.json()),
-      fetch(`/api/financial-statements/equity-statement?year=${year}`).then(r => r.json()),
+      fetch(`/api/financial-statements/balance-sheet?date=${endDate}`, { headers }).then(r => r.json()),
+      fetch(`/api/financial-statements/income-statement?${params}`, { headers }).then(r => r.json()),
+      fetch(`/api/financial-statements/cash-flow?${params}`, { headers }).then(r => r.json()),
+      fetch(`/api/financial-statements/equity-statement?year=${year}`, { headers }).then(r => r.json()),
     ]);
 
     setBalance(bs);
@@ -218,7 +226,7 @@ export default function FinancialStatementsPage() {
     setCashflow(cf);
     setEquity(eq);
     setLoading(false);
-  }, [startDate, endDate]);
+  }, [startDate, endDate, activeCompanyId]);
 
   useEffect(() => { load(); }, [load]);
 
