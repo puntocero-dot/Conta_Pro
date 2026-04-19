@@ -32,7 +32,6 @@ interface Transaction {
     };
     createdBy?: {
         id: string;
-        name: string;
         email: string;
     };
 }
@@ -333,11 +332,11 @@ export default function TransactionsPage() {
                                             <span className={styles.transactionDate}>
                                                 {formatDate(transaction.date)}
                                             </span>
-                                            {transaction.createdBy?.name && (
+                                            {transaction.createdBy?.email && (
                                                 <>
                                                     <span style={{ color: '#cbd5e1' }}>•</span>
                                                     <span style={{ fontSize: '0.75rem', color: '#94a3b8' }} title="Registrado por">
-                                                        👤 {transaction.createdBy.name}
+                                                        👤 {transaction.createdBy.email.split('@')[0]}
                                                     </span>
                                                 </>
                                             )}

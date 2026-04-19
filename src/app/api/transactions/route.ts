@@ -60,18 +60,18 @@ export async function GET(request: NextRequest) {
             prisma.transaction.count({ where: whereClause }),
         ]);
 
-        // Enriquecer con nombre del usuario que registró cada transacción
+        // Enriquecer con email del usuario que registró cada transacción
         const userIds = [...new Set(transactions.map(t => t.userId).filter(Boolean))];
         const users = userIds.length > 0
-            ? await (prisma.user as any).findMany({
-                where: { id: { in: userIds } },
-                select: { id: true, name: true, email: true },
+            ? await prisma.user.findMany({
+                where: { id: { in: userIds as string[] } },
+                select: { id: true, email: true },
               })
             : [];
-        const userMap = new Map((users as any[]).map((u: any) => [u.id, u]));
+        const userMap = new Map(users.map(u => [u.id, u]));
         const enriched = transactions.map(t => ({
             ...t,
-            createdBy: userMap.get(t.userId) ?? { id: t.userId, name: 'Desconocido', email: '' },
+            createdBy: userMap.get(t.userId) ?? { id: t.userId, email: '' },
         }));
 
         return NextResponse.json({ transactions: enriched, total, page, limit });
