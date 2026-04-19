@@ -174,7 +174,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -184,12 +184,14 @@
 }
 
 .modal {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: var(--radius-lg);
+    background: #0c1220;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
     width: 600px;
     max-width: 95vw;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), 0 8px 32px rgba(0, 0, 0, 0.4);
     overflow: hidden;
+    backdrop-filter: blur(20px);
 }
 
 .modalHeader {
@@ -280,7 +282,7 @@
     position: absolute;
     top: 100%;
     right: 0;
-    background: rgba(255, 255, 255, 0.03);
+    background: #0c1220;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);

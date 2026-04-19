@@ -217,7 +217,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -226,7 +226,7 @@
 }
 
 .modal {
-  background: rgba(255, 255, 255, 0.03);
+  background: #0c1220;
   border-radius: var(--radius-lg);
   width: 500px;
   max-width: 95vw;

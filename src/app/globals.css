@@ -263,23 +263,49 @@ p {
 .input {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  background: var(--input);
-  border: 1px solid var(--input-border);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   font-size: 0.875rem;
-  color: var(--foreground);
+  color: #f1f5f9;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   font-family: inherit;
+  color-scheme: dark;
 }
 
 .input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--ring);
+  background: rgba(59, 130, 246, 0.06);
 }
 
 .input::placeholder {
-  color: var(--muted-foreground);
+  color: #475569;
+}
+
+/* Select dark styling */
+select.input {
+  cursor: pointer;
+  appearance: auto;
+  background-image: none;
+}
+
+select.input option {
+  background: #0c1220;
+  color: #f1f5f9;
+}
+
+select.input option:checked,
+select.input option:hover {
+  background: #1e3a5f;
+  color: white;
+}
+
+/* Textarea */
+textarea.input {
+  resize: vertical;
+  min-height: 80px;
 }
 
 /* ── Badge ── */
